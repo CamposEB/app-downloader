@@ -42,7 +42,7 @@ android {
     buildFeatures { buildConfig = true }
 
     defaultConfig {
-        applicationId = "com.maheshtechnicals.sealplus"
+        applicationId = "com.camposeb.downloader"
         minSdk = 24
         targetSdk = 37
         versionCode = 301_000_400
