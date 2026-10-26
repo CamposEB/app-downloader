@@ -6,6 +6,10 @@
       <module name="Seal.buildSrc" target="21" />
       <module name="Seal.buildSrc.main" target="21" />
       <module name="Seal.buildSrc.test" target="21" />
+      <module name="Seal_Plus.app" target="21" />
+      <module name="Seal_Plus.buildSrc" target="21" />
+      <module name="Seal_Plus.buildSrc.main" target="21" />
+      <module name="Seal_Plus.buildSrc.test" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>

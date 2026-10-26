@@ -57,8 +57,9 @@ android {
                 abi {
                     isEnable = true
                     reset()
-                    include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-                    isUniversalApk = true
+                    // Apenas 64 bits: APK bem menor. Para emulador x86_64, adicione "x86_64".
+                    include("arm64-v8a")
+                    isUniversalApk = false
                 }
             }
         } else {
@@ -87,7 +88,7 @@ android {
                     output.versionCode.set(baseAbiCode + (output.versionCode.get() ?: 0))
                 }
 
-                output.outputFileName.set("SealPlus-${baseVersionName}-${name ?: "universal"}.apk")
+                output.outputFileName.set("DestinyDownloader-${baseVersionName}-${name ?: "universal"}.apk")
             }
         }
     }
@@ -133,16 +134,20 @@ android {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
         jniLibs { useLegacyPackaging = true }
     }
-    androidResources { generateLocaleConfig = true }
+
+    androidResources {
+        generateLocaleConfig = true
+        localeFilters += listOf("pt", "pt-rBR", "en")
+    }
 
     namespace = "com.junkfood.seal"
 }
 
 ktfmt { kotlinLangStyle() }
 
-kotlin { 
+kotlin {
     jvmToolchain(21)
-    
+
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
     }
@@ -186,5 +191,5 @@ dependencies {
     testImplementation(libs.junit4)
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.androidx.test.espresso.core)
-    implementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 }
