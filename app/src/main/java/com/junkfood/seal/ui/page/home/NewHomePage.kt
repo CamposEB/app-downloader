@@ -16,21 +16,25 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -71,8 +75,11 @@ import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.VideoFile
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -124,6 +131,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -165,6 +173,7 @@ import com.junkfood.seal.util.PreferenceUtil.getBoolean
 import com.junkfood.seal.util.PreferenceUtil.getInt
 import com.junkfood.seal.util.PreferenceUtil.getLong
 import com.junkfood.seal.util.PreferenceUtil.updateLong
+import com.junkfood.seal.util.CheckForUpdatesDialog
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -195,6 +204,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
+/** Paleta preto/azul da tela inicial do Destiny. */
+private object DestinyHome {
+    val Black = Color(0xFF05070D)
+    val CardBg = Color(0xFF0E1630)
+    val Blue = Color(0xFF1E6BFF)
+    val BlueLight = Color(0xFF4DA3FF)
+    val BlueDeep = Color(0xFF1448C8)
+
+    val backgroundBrush =
+        Brush.verticalGradient(listOf(Color(0xFF0B2250), Color(0xFF060A16), Black))
+    val buttonBrush = Brush.horizontalGradient(listOf(Blue, BlueLight))
+    val titleBrush = Brush.horizontalGradient(listOf(Blue, BlueLight))
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewHomePage(
@@ -215,33 +238,29 @@ fun NewHomePage(
     val uriHandler = LocalUriHandler.current
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
-    
+
     var showExitDialog by remember { mutableStateOf(false) }
     var urlText by remember { mutableStateOf("") }
+    var isFetchingInfo by remember { mutableStateOf(false) }
+    var clipboardUrl by remember { mutableStateOf<String?>(null) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     // Pre-fill URL from share intent and auto-open the download dialog.
-    // The original code only filled the text field without opening the dialog, causing the
-    // "nothing appears" bug when a URL was shared to the app — the URL silently appeared in
-    // the input box with no feedback and no dialog. Match the behavior of DownloadPageV2
-    // which calls postAction(Action.ShowSheet(...)) on share.
     val sharedUrl by dialogViewModel.sharedUrlFlow.collectAsState()
     LaunchedEffect(sharedUrl) {
         if (sharedUrl.isNotBlank()) {
             urlText = sharedUrl
             dialogViewModel.consumeSharedUrl()
-            // Auto-open the dialog with the shared URL so the user immediately sees it,
-            // rather than having to find and tap the text field.
             dialogViewModel.postAction(Action.ShowSheet(listOf(sharedUrl)))
         }
     }
-    
+
     // Get lifecycle owner
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    
+
     // State to track lifecycle and force refresh
     var lifecycleRefreshTrigger by remember { mutableStateOf(0) }
-    
+
     // Monitor lifecycle events to trigger refresh when screen resumes
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -254,13 +273,31 @@ fun NewHomePage(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
-    
+
+    // Detecção Automática de Link na área de transferência
+    LaunchedEffect(lifecycleRefreshTrigger) {
+        if (urlText.isEmpty() && !isFetchingInfo) {
+            val clipText = clipboardManager.getText()?.text
+            if (clipText != null) {
+                val matchedUrl = context.matchUrlFromClipboard(clipText)
+                if (matchedUrl != null && matchedUrl != clipboardUrl) {
+                    clipboardUrl = matchedUrl
+                    urlText = matchedUrl
+
+                    delay(300)
+
+                    // Correção: startDownload busca as informações E abre o painel
+                    dialogViewModel.startDownload(listOf(matchedUrl))
+                }
+            }
+        }
+    }
+
     // Permission states
     var showNotificationPermissionDialog by remember { mutableStateOf(false) }
     var showBatteryOptimizationDialog by remember { mutableStateOf(false) }
     var permissionsChecked by remember { mutableStateOf(false) }
-    var showSponsorDialog by remember { mutableStateOf(false) }
-    
+
     // Check notification permission
     val hasNotificationPermission = remember(lifecycleRefreshTrigger) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -272,23 +309,7 @@ fun NewHomePage(
             true // Not needed below Android 13
         }
     }
-    
-    // Check battery optimization
-    // NOTE: no cooldown/dismissal flag at all — this reminder should show every single time the
-    // app is opened for as long as battery optimization is still not disabled, since disabling
-    // it is required for reliable background downloads. There's nothing to remember between
-    // launches: shouldPromptBatteryDialog() always reflects the live, real-time system state.
-    //
-    // This is a directly settable mutableStateOf (not a remember(key) derived value) because we
-    // need to refresh it from TWO independent triggers: (1) lifecycleRefreshTrigger on every
-    // ON_RESUME, and (2) the battery settings activity-result callback below. #2 exists because
-    // on some OEM ROMs, the OS does not commit/propagate the new battery-optimization
-    // whitelist state instantly — there can be a short delay between the user picking "No
-    // restrictions" in the settings screen and PowerManager.isIgnoringBatteryOptimizations()
-    // actually reflecting it. Reading it at the exact instant ON_RESUME fires (right as the
-    // user presses back) can race that propagation and read the stale "still restricted" value,
-    // which is exactly why the dialog kept reappearing even after the user had correctly fixed
-    // the setting. Re-checking again after a short delay closes that race.
+
     var isBatteryOptimizationDisabled by remember {
         mutableStateOf(BatteryUtil.isIgnoringBatteryOptimizations(context))
     }
@@ -297,18 +318,11 @@ fun NewHomePage(
     LaunchedEffect(lifecycleRefreshTrigger) {
         isBatteryOptimizationDisabled = BatteryUtil.isIgnoringBatteryOptimizations(context)
     }
-    
-    // Notification permission launcher - tries system permission first
-    // Notification settings launcher - opens app notification settings
+
     val notificationSettingsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { /* Permission state will be checked on resume */ }
-    
-    // Battery optimization launcher. The activity-result callback fires right when the user
-    // returns from the OS battery settings screen (whether via back press or completing a
-    // system dialog) — we re-check immediately AND again after a short delay (see the NOTE
-    // above the isBatteryOptimizationDisabled declaration) to avoid racing a delayed OS-side
-    // whitelist update on some OEM ROMs.
+
     val batteryOptimizationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -319,7 +333,6 @@ fun NewHomePage(
         }
     }
 
-    
     // Check permissions on first load
     LaunchedEffect(Unit) {
         if (!permissionsChecked) {
@@ -330,44 +343,17 @@ fun NewHomePage(
                 showBatteryOptimizationDialog = true
             }
         }
-        // Sponsor support dialog — delay slightly so permissions dialogs get priority
-        delay(600L)
-        val frequency = SPONSOR_DIALOG_FREQUENCY.getInt()
-        if (frequency != SPONSOR_FREQ_OFF) {
-            val lastShown = SPONSOR_DIALOG_LAST_SHOWN.getLong()
-            val intervalMs = if (frequency == SPONSOR_FREQ_WEEKLY)
-                7L * 24 * 60 * 60 * 1000
-            else
-                30L * 24 * 60 * 60 * 1000
-            val now = System.currentTimeMillis()
-            if (lastShown == 0L || now - lastShown >= intervalMs) {
-                showSponsorDialog = true
-            }
-        }
     }
-    
+
     // Monitor permission state changes to show next dialog when user returns from settings
     LaunchedEffect(hasNotificationPermission, isBatteryOptimizationDisabled) {
         if (permissionsChecked) {
-            // If notification dialog was shown and is now dismissed
             if (!showNotificationPermissionDialog && hasNotificationPermission && shouldPromptBatteryDialog()) {
-                // Show battery optimization dialog after notification permission is granted
                 showBatteryOptimizationDialog = true
             }
         }
     }
 
-    // Re-prompt on every app resume, even when isBatteryOptimizationDisabled's VALUE hasn't
-    // changed. NOTE: the effect above only fires when hasNotificationPermission or
-    // isBatteryOptimizationDisabled actually CHANGE VALUE — if battery optimization was already
-    // restricted before this resume and is STILL restricted after it (the common case: the user
-    // dismissed the dialog without touching the setting), the boolean is identical and that
-    // effect does not re-run. That silently broke the requirement that this dialog show every
-    // single time the app is opened/resumed for as long as the setting is wrong — it only
-    // actually resurfaced after a full process restart (which resets permissionsChecked), not on
-    // a simple background→foreground resume. Keying directly on lifecycleRefreshTrigger (which
-    // increments on every ON_RESUME, regardless of whether the derived booleans changed) closes
-    // that gap.
     LaunchedEffect(lifecycleRefreshTrigger) {
         if (permissionsChecked &&
             !showNotificationPermissionDialog &&
@@ -377,11 +363,7 @@ fun NewHomePage(
             showBatteryOptimizationDialog = true
         }
     }
-    
-    // Always-on collection: LaunchedEffect is tied to the composition lifetime (not Android
-    // lifecycle), so Room emissions are NEVER missed — not when on the back stack, not when
-    // the app is backgrounded, not during navigation transitions. This prevents the stale-card
-    // bug where a deletion on VideoListPage wasn't reflected until the process was killed.
+
     var recentDownloads by remember { mutableStateOf(emptyList<DownloadedVideoInfo>()) }
     LaunchedEffect(Unit) {
         DatabaseUtil.getVisibleDownloadHistoryFlow().collect { list ->
@@ -389,30 +371,22 @@ fun NewHomePage(
         }
     }
 
-    // Tracks IDs that have been hidden this session for instant optimistic UI removal
     var localHiddenIds by remember { mutableStateOf(setOf<Int>()) }
 
-    // Purge stale IDs from localHiddenIds once the DB confirms their removal,
-    // so a later re-insertion doesn't get incorrectly suppressed.
     LaunchedEffect(recentDownloads) {
         val currentIds = recentDownloads.map { it.id }.toSet()
         localHiddenIds = localHiddenIds.intersect(currentIds)
     }
-    
-    // Get recent 5 downloads (remove duplicates by video URL and path to prevent duplicate cards)
+
     val recentFiveDownloads = remember(recentDownloads) {
         recentDownloads
-            .distinctBy { it.videoUrl + it.videoPath } // Use both URL and path to ensure uniqueness
+            .distinctBy { it.videoUrl + it.videoPath }
             .takeLast(5)
             .reversed()
     }
-    
-    // Get active downloads with proper state observation for real-time updates.
-    // SnapshotStateMap is a stable reference; derivedStateOf tracks snapshot reads internally.
+
     val taskStateMap = downloader.getTaskStateMap()
 
-    // Build the set of URLs that currently have an *active* (non-completed) task so we can
-    // suppress those entries from the "completed" database section and avoid dual-listing.
     val activeTaskUrls by remember {
         derivedStateOf {
             taskStateMap
@@ -423,7 +397,6 @@ fun NewHomePage(
         }
     }
 
-    // Create a comprehensive set of identifiers from recent downloads to avoid duplicates
     val recentDownloadIdentifiers = remember(recentFiveDownloads) {
         recentFiveDownloads.flatMap { download ->
             listOf(
@@ -434,21 +407,6 @@ fun NewHomePage(
         }.toSet()
     }
 
-    // Filter active downloads:
-    //   • Always show non-completed tasks (running, queued, paused, canceled, error)
-    //   • Show completed tasks only if they haven't yet appeared in the recent-downloads DB section
-    // Sort order (strict, stable):
-    //   1. Running / FetchingInfo   — actively working right now
-    //   2. ReadyWithInfo            — info fetched, waiting for a download slot (more advanced than Idle)
-    //   3. Idle                     — just queued, nothing started yet
-    //   4. Paused                   — user paused
-    //   5. Canceled / Error         — terminal but user-visible
-    //   6. Completed                — transition state before DB write, shown below
-    // Within each group: newer tasks (higher timeCreated) appear first.
-    // IMPORTANT: recentDownloadIdentifiers is a plain Set (not snapshot state), so
-    // derivedStateOf cannot track it. We pass it as a key to remember() so the
-    // derivedStateOf object is recreated (and re-evaluated) whenever the DB-backed
-    // identifiers set changes — e.g. when a completed task is flushed to the DB.
     val activeDownloads by remember(recentDownloadIdentifiers) {
         derivedStateOf {
             taskStateMap
@@ -460,8 +418,8 @@ fun NewHomePage(
                             val taskUrl  = task.url
                             val isInRecent =
                                 recentDownloadIdentifiers.contains(taskUrl) ||
-                                recentDownloadIdentifiers.contains(filePath) ||
-                                recentDownloadIdentifiers.contains("$taskUrl|$filePath")
+                                        recentDownloadIdentifiers.contains(filePath) ||
+                                        recentDownloadIdentifiers.contains("$taskUrl|$filePath")
                             !isInRecent
                         }
                         else -> true
@@ -476,26 +434,10 @@ fun NewHomePage(
         }
     }
 
-    // Exclude recent-DB entries whose URL still has a live (non-completed) active task so items
-    // don't appear in both sections simultaneously during the Running → Completed transition.
-    // Also exclude optimistically hidden items so the card vanishes before the DB Flow re-emits.
     val recentFiveDownloadsFiltered = remember(recentFiveDownloads, activeTaskUrls, localHiddenIds) {
         recentFiveDownloads.filter { it.videoUrl !in activeTaskUrls && it.id !in localHiddenIds }
     }
 
-    // Prune Completed tasks from the in-memory taskStateMap as soon as their DB row is confirmed
-    // present. taskStateMap lives inside the process-scoped DownloaderV2 singleton, so a
-    // Completed task otherwise lingers there FOREVER (it's only ever removed via the Active
-    // Downloads card's own delete button). If left unpruned and the user later deletes/hides
-    // that same item from History or Recent Downloads, the DB row disappears but the stale
-    // Completed task does not — so it silently satisfies the "not yet synced to DB" condition
-    // in activeDownloads below and gets wrongly resurrected as a ghost card. This only became
-    // visible after a fresh process start because enqueueFromBackup() never restores Completed
-    // tasks, masking the leak on cold boot. Pruning here, right when we know the DB has taken
-    // over as source of truth, closes that gap.
-    // Checked against the FULL visible download list (not just the last-5 window used for the
-    // Recent Downloads cards) so a task that ages out of the top 5 still gets pruned instead of
-    // resurfacing indefinitely.
     val allVisibleIdentifiers = remember(recentDownloads) {
         recentDownloads.flatMap { download ->
             listOf(
@@ -510,35 +452,30 @@ fun NewHomePage(
             .filter { (task, state) ->
                 val downloadState = state.downloadState
                 downloadState is Task.DownloadState.Completed &&
-                    (allVisibleIdentifiers.contains(task.url) ||
-                        allVisibleIdentifiers.contains(downloadState.filePath) ||
-                        allVisibleIdentifiers.contains("${task.url}|${downloadState.filePath}"))
+                        (allVisibleIdentifiers.contains(task.url) ||
+                                allVisibleIdentifiers.contains(downloadState.filePath) ||
+                                allVisibleIdentifiers.contains("${task.url}|${downloadState.filePath}"))
             }
             .map { it.key }
             .forEach { task -> downloader.remove(task) }
     }
 
-    // Hoisted state for the Spotify-style swipeable download-details sheet: holds the index
-    // (within recentFiveDownloadsFiltered) of the card whose details are being viewed, or null
-    // when the sheet is closed. Kept as an index (not the item itself) so left/right swipes
-    // inside the sheet can move to adjacent list entries.
     var detailsDialogIndex by remember { mutableStateOf<Int?>(null) }
-    
-    // Handle back press to show exit confirmation
+
     BackHandler {
         showExitDialog = true
     }
-    
+
     // Notification Permission Dialog
     if (showNotificationPermissionDialog) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showNotificationPermissionDialog = false
                 if (shouldPromptBatteryDialog()) {
                     showBatteryOptimizationDialog = true
                 }
             },
-            icon = { 
+            icon = {
                 Icon(
                     imageVector = Icons.Outlined.Notifications,
                     contentDescription = null,
@@ -546,14 +483,14 @@ fun NewHomePage(
                     modifier = Modifier.size(32.dp)
                 )
             },
-            title = { 
+            title = {
                 Text(
                     text = stringResource(R.string.notification_permission_required),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
             },
-            text = { 
+            text = {
                 Text(
                     text = stringResource(R.string.notification_permission_desc),
                     style = MaterialTheme.typography.bodyMedium,
@@ -565,7 +502,6 @@ fun NewHomePage(
                     onClick = {
                         showNotificationPermissionDialog = false
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            // Open notification settings directly
                             val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                                 putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                             }
@@ -581,7 +517,7 @@ fun NewHomePage(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         showNotificationPermissionDialog = false
                         if (shouldPromptBatteryDialog()) {
                             showBatteryOptimizationDialog = true
@@ -598,17 +534,14 @@ fun NewHomePage(
             tonalElevation = 6.dp
         )
     }
-    
-    // Battery Optimization Dialog — no dismissal state is persisted, so this simply hides for
-    // the current screen visit. It will show again on the next app open/resume as long as
-    // battery optimization is still not disabled (see shouldPromptBatteryDialog above).
-    // The user can opt out of this reminder in General settings (issue #26).
+
+    // Battery Optimization Dialog
     if (showBatteryOptimizationDialog && !BATTERY_POPUP_HIDDEN.getBoolean()) {
         AlertDialog(
             onDismissRequest = {
                 showBatteryOptimizationDialog = false
             },
-            icon = { 
+            icon = {
                 Icon(
                     imageVector = Icons.Outlined.BatteryChargingFull,
                     contentDescription = null,
@@ -616,14 +549,14 @@ fun NewHomePage(
                     modifier = Modifier.size(32.dp)
                 )
             },
-            title = { 
+            title = {
                 Text(
                     text = stringResource(R.string.battery_configuration),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
             },
-            text = { 
+            text = {
                 Column {
                     Text(
                         text = stringResource(R.string.battery_configuration_desc),
@@ -646,11 +579,6 @@ fun NewHomePage(
                     onClick = {
                         showBatteryOptimizationDialog = false
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            // Wrap in try-catch: on some OEM ROMs (e.g. HarmonyOS 4.x) an
-                            // intent may pass resolveActivity() but still throw a
-                            // SecurityException or ActivityNotFoundException when launched
-                            // due to a restricted permission requirement. Fall back to the
-                            // standard Android battery settings in that case.
                             runCatching {
                                 val intent = BatteryUtil.buildBatterySettingsIntent(context)
                                 batteryOptimizationLauncher.launch(intent)
@@ -661,8 +589,6 @@ fun NewHomePage(
                                         BatteryUtil.buildStandardBatteryIntent(context)
                                     )
                                 }.onFailure { fallbackErr ->
-                                    // ACTION_APPLICATION_DETAILS_SETTINGS should always be
-                                    // resolvable; if even this fails, log and do nothing.
                                     Log.e("NewHomePage", "Fallback battery intent also failed: ${fallbackErr.message}")
                                 }
                             }
@@ -692,21 +618,6 @@ fun NewHomePage(
         )
     }
 
-    // Sponsor support dialog
-    if (showSponsorDialog) {
-        SponsorSupportDialog(
-            onDismiss = {
-                showSponsorDialog = false
-                SPONSOR_DIALOG_LAST_SHOWN.updateLong(System.currentTimeMillis())
-            },
-            onSupport = {
-                showSponsorDialog = false
-                SPONSOR_DIALOG_LAST_SHOWN.updateLong(System.currentTimeMillis())
-                onNavigateToSupport()
-            },
-        )
-    }
-
     // Exit confirmation dialog
     if (showExitDialog) {
         AlertDialog(
@@ -731,11 +642,15 @@ fun NewHomePage(
             }
         )
     }
-    
+
     Scaffold(
+        modifier =
+            if (LocalDarkTheme.current.isDarkTheme()) Modifier.background(DestinyHome.backgroundBrush)
+            else Modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = stringResource(R.string.home),
                         style = MaterialTheme.typography.titleLarge,
@@ -746,7 +661,7 @@ fun NewHomePage(
                     IconButton(onClick = onMenuOpen) {
                         Icon(
                             imageVector = Icons.Outlined.Menu,
-                            contentDescription = "Menu",
+                            contentDescription = "Abrir menu",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -755,7 +670,7 @@ fun NewHomePage(
                     IconButton(onClick = onNavigateToSupport) {
                         Icon(
                             imageVector = Icons.Outlined.AttachMoney,
-                            contentDescription = "Support Developer",
+                            contentDescription = "Apoiar o desenvolvedor",
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -780,29 +695,29 @@ fun NewHomePage(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Seal+ Branding with animated glowing "+"
+            // Cabeçalho da marca
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Destiny",
-                            style = MaterialTheme.typography.displayMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        AnimatedGlowingPlus()
-                    }
+                    Text(
+                        text = "Destiny",
+                        style = MaterialTheme.typography.displayMedium.merge(
+                            TextStyle(brush = DestinyHome.titleBrush)
+                        ),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Baixe vídeos e áudios com rapidez",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
-            // Quick-access row for the 4 More Tools — icon-only, no labels/section header per
-            // design intent, so it reads as a native strip of shortcuts rather than a separate
-            // "section" bolted onto the home screen.
+            // Atalhos Rápidos (Quick Tools)
             item {
                 QuickToolsRow(
                     onThumbnailDownload = onNavigateToThumbnailDownload,
@@ -811,18 +726,72 @@ fun NewHomePage(
                     onBatchUrlImport = onNavigateToBatchUrlImport,
                 )
             }
-            
+
+            // Banner de Detecção Automática de Link
+            if (clipboardUrl != null) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = DestinyHome.CardBg),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(Icons.Outlined.Link, contentDescription = null, tint = DestinyHome.BlueLight)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Link copiado detectado",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.7f)
+                                )
+                                Text(
+                                    clipboardUrl!!,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    urlText = clipboardUrl!!
+                                    clipboardUrl = null
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = DestinyHome.Blue),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text("Colar", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+            }
+
             // URL Input Field with Download Button
             item {
                 URLInputField(
                     value = urlText,
                     onValueChange = { urlText = it },
+                    isFetchingInfo = isFetchingInfo,
                     onDownloadClick = {
                         if (urlText.isNotBlank()) {
                             view.slightHapticFeedback()
-                            dialogViewModel.startDownload(listOf(urlText))
-                            urlText = ""
-                            keyboardController?.hide()
+                            scope.launch {
+                                isFetchingInfo = true
+                                try {
+                                    dialogViewModel.startDownload(listOf(urlText))
+                                    delay(800) // Dá tempo para o usuário ver o loading antes de abrir o modal
+                                } finally {
+                                    isFetchingInfo = false
+                                    urlText = ""
+                                    clipboardUrl = null
+                                    keyboardController?.hide()
+                                }
+                            }
                         } else {
                             context.makeToast(R.string.url_empty)
                         }
@@ -832,25 +801,22 @@ fun NewHomePage(
                         if (clipText != null) {
                             context.matchUrlFromClipboard(clipText)?.let { url ->
                                 urlText = url
+                                clipboardUrl = null
                                 context.makeToast(R.string.paste_msg)
                             } ?: context.makeToast(R.string.paste_fail_msg)
                         }
                     }
                 )
             }
-            
-            // Recent Downloads Section - combines both active and completed.
-            // Use activeDownloads (not taskStateMap) so the header hides correctly when all
-            // tasks are Completed and already present in the DB-backed section.
+
+            // Recent Downloads Section
             if (activeDownloads.isNotEmpty() || recentFiveDownloadsFiltered.isNotEmpty()) {
                 item {
-                    // Retry All lives here too, so canceled/failed tasks can be restarted from
-                    // the home screen without opening the Downloads page.
                     val hasRetryableTasks by remember {
                         derivedStateOf {
                             taskStateMap.values.any {
                                 it.downloadState is Task.DownloadState.Canceled ||
-                                    it.downloadState is Task.DownloadState.Error
+                                        it.downloadState is Task.DownloadState.Error
                             }
                         }
                     }
@@ -868,11 +834,10 @@ fun NewHomePage(
                             IconButton(
                                 onClick = {
                                     view.slightHapticFeedback()
-                                    // Restart every task in a Canceled or Error state.
                                     taskStateMap.entries
                                         .filter { (_, state) ->
                                             state.downloadState is Task.DownloadState.Canceled ||
-                                                state.downloadState is Task.DownloadState.Error
+                                                    state.downloadState is Task.DownloadState.Error
                                         }
                                         .map { it.key }
                                         .forEach { downloader.restart(it) }
@@ -888,7 +853,7 @@ fun NewHomePage(
                     }
                 }
             }
-            
+
             // Show active downloads first
             if (activeDownloads.isNotEmpty()) {
                 items(
@@ -896,12 +861,9 @@ fun NewHomePage(
                     key = { (task, _) -> task.id }
                 ) { (task, state) ->
                     var showDetailsDialog by remember { mutableStateOf(false) }
-                    // Combine task+state into a single holder to avoid a TOCTOU window where
-                    // two separate state writes could cause a recomposition between them —
-                    // detailsTask set but detailsState still null → NPE in DownloadDetailsDialog.
                     var detailsInfo by remember { mutableStateOf<Pair<Task, Task.State>?>(null) }
                     var showActiveDeleteDialog by remember { mutableStateOf(false) }
-                    
+
                     ActiveDownloadCard(
                         task = task,
                         state = state,
@@ -929,8 +891,8 @@ fun NewHomePage(
                                 }
                                 is UiAction.OpenFile -> {
                                     action.filePath?.let {
-                                        FileUtil.openFile(path = it) { 
-                                            context.makeToast(R.string.file_unavailable) 
+                                        FileUtil.openFile(path = it) {
+                                            context.makeToast(R.string.file_unavailable)
                                         }
                                     }
                                 }
@@ -949,7 +911,7 @@ fun NewHomePage(
                             }
                         }
                     )
-                    
+
                     val detailsSnapshot = detailsInfo
                     if (showDetailsDialog && detailsSnapshot != null) {
                         DownloadDetailsDialog(
@@ -995,7 +957,7 @@ fun NewHomePage(
                     }
                 }
             }
-            
+
             // Show recent completed downloads
             if (recentFiveDownloadsFiltered.isNotEmpty()) {
                 items(
@@ -1004,20 +966,10 @@ fun NewHomePage(
                 ) { downloadInfo ->
                     var showRecentDeleteDialog by remember { mutableStateOf(false) }
 
-                    // rememberUpdatedState ensures the lambdas below always call the LATEST
-                    // version of these closures without creating a new lambda instance on every
-                    // recomposition. This is critical: during an active download, taskStateMap
-                    // updates every ~200ms which triggers recomposition of this item. Without
-                    // rememberUpdatedState, each recomposition creates new lambda objects →
-                    // RecentDownloadCard sees its parameters as changed → fully recomposes →
-                    // the open DropdownMenu loses its composition state and dismisses.
-                    // With rememberUpdatedState, the lambda references passed to RecentDownloadCard
-                    // are stable across recompositions, so the card only recomposes when
-                    // downloadInfo itself actually changes.
                     val currentDownloadInfo by rememberUpdatedState(downloadInfo)
                     val currentList by rememberUpdatedState(recentFiveDownloadsFiltered)
                     val currentLocalHiddenIds by rememberUpdatedState(localHiddenIds)
-                    
+
                     val stableOnClick: () -> Unit = remember {
                         {
                             FileUtil.openFile(currentDownloadInfo.videoPath) {
@@ -1066,7 +1018,7 @@ fun NewHomePage(
                             Unit
                         }
                     }
-                    
+
                     RecentDownloadCard(
                         downloadInfo = downloadInfo,
                         refreshKey = lifecycleRefreshTrigger,
@@ -1077,7 +1029,7 @@ fun NewHomePage(
                         onDelete = stableOnDelete,
                         onHide = stableOnHide,
                     )
-                    
+
                     if (showRecentDeleteDialog) {
                         SealDialog(
                             onDismissRequest = { showRecentDeleteDialog = false },
@@ -1098,10 +1050,6 @@ fun NewHomePage(
                             confirmButton = {
                                 ConfirmButton {
                                     showRecentDeleteDialog = false
-                                    // Use currentDownloadInfo and currentLocalHiddenIds
-                                    // (from rememberUpdatedState) so we always act on the
-                                    // latest item data — not a stale snapshot captured
-                                    // when this lambda was first composed.
                                     val info = currentDownloadInfo
                                     localHiddenIds = currentLocalHiddenIds + info.id
                                     scope.launch(Dispatchers.IO) {
@@ -1122,7 +1070,7 @@ fun NewHomePage(
                     }
                 }
             }
-            
+
             // Bottom spacing
             item {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -1130,13 +1078,7 @@ fun NewHomePage(
         }
     }
 
-    // Spotify-style swipeable details sheet for recent downloads. A single sheet instance is
-    // shared across all cards; detailsDialogIndex tracks which item (by position in
-    // recentFiveDownloadsFiltered) is currently shown, so left/right swipes just move the index.
     detailsDialogIndex?.let { index ->
-        // The underlying list is a live Flow and can shrink while the sheet is open (e.g. the
-        // user deletes/hides the item they're viewing). Clamp to the last valid index, or close
-        // the sheet entirely if nothing is left to show.
         if (recentFiveDownloadsFiltered.isEmpty()) {
             detailsDialogIndex = null
         } else {
@@ -1148,18 +1090,17 @@ fun NewHomePage(
             )
         }
     }
-    
-    // Download Dialog
+
     var preferences by remember {
         mutableStateOf(DownloadUtil.DownloadPreferences.createFromPreferences())
     }
     val sheetValue by dialogViewModel.sheetValueFlow.collectAsStateWithLifecycle()
     val dialogState by dialogViewModel.sheetStateFlow.collectAsStateWithLifecycle()
     val selectionState = dialogViewModel.selectionStateFlow.collectAsStateWithLifecycle().value
-    
+
     var showDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    
+
     LaunchedEffect(sheetValue) {
         if (sheetValue == DownloadDialogViewModel.SheetValue.Expanded) {
             showDialog = true
@@ -1167,9 +1108,15 @@ fun NewHomePage(
             launch { sheetState.hide(); showDialog = false }
         }
     }
-    
-    // Config() reads MMKV preferences — memoize it to avoid 5 MMKV reads/sec during
-    // active downloads when the 200ms progress throttle triggers recompositions.
+
+    // FIX: Fecha automaticamente a tela de seleção de formato se um download já estiver ativo.
+    // Isso evita que o app fique "travado" com uma camada invisível por cima.
+    LaunchedEffect(activeDownloads, selectionState) {
+        if (activeDownloads.isNotEmpty() && selectionState !is DownloadDialogViewModel.SelectionState.Idle) {
+            dialogViewModel.postAction(Action.Reset)
+        }
+    }
+
     val dialogConfig = remember { Config() }
     if (showDialog) {
         DownloadDialog(
@@ -1181,136 +1128,101 @@ fun NewHomePage(
             onActionPost = { dialogViewModel.postAction(it) },
         )
     }
-    
+
     when (selectionState) {
         is DownloadDialogViewModel.SelectionState.FormatSelection ->
             FormatPage(
                 state = selectionState,
                 onDismissRequest = { dialogViewModel.postAction(Action.Reset) },
             )
-        
+
         is DownloadDialogViewModel.SelectionState.PlaylistSelection -> {
             PlaylistSelectionPage(
                 state = selectionState,
                 onDismissRequest = { dialogViewModel.postAction(Action.Reset) },
             )
         }
-        
+
         DownloadDialogViewModel.SelectionState.Idle -> {}
     }
+
+    // Chama a verificação de atualização do GitHub
+    CheckForUpdatesDialog()
 }
 
 @Composable
 fun URLInputField(
     value: String,
     onValueChange: (String) -> Unit,
+    isFetchingInfo: Boolean,
     onDownloadClick: () -> Unit,
     onPasteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isDarkTheme = LocalDarkTheme.current.isDarkTheme()
-    val isGradientDark = LocalGradientDarkMode.current
-    val fullPlaceholder = stringResource(R.string.enter_url_to_download)
-
-    // Typewriter animation: reveal characters one by one
-    var displayedLength by remember { mutableStateOf(0) }
-    
-    LaunchedEffect(Unit) {
-        displayedLength = 0
-        for (i in 1..fullPlaceholder.length) {
-            delay(50L)
-            displayedLength = i
-        }
-    }
-
-    // Gradient animation for the placeholder text
-    val infiniteTransition = rememberInfiniteTransition(label = "placeholderGradient")
-    val gradientShift by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "placeholderShift"
-    )
-
-    val gradientColors = listOf(
-        MaterialTheme.colorScheme.primary,
-        MaterialTheme.colorScheme.tertiary,
-        MaterialTheme.colorScheme.secondary,
-        MaterialTheme.colorScheme.tertiary,
-        MaterialTheme.colorScheme.primary,
-    )
-
-    val gradientBrush = Brush.linearGradient(
-        colors = gradientColors,
-        start = Offset(gradientShift, 0f),
-        end = Offset(gradientShift + 400f, 0f),
-        tileMode = TileMode.Mirror
-    )
-    
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(64.dp),
+        modifier = modifier.fillMaxWidth().height(64.dp),
         placeholder = {
             Text(
-                text = fullPlaceholder.take(displayedLength),
-                style = MaterialTheme.typography.bodyLarge.merge(
-                    TextStyle(brush = gradientBrush)
-                )
+                text = stringResource(R.string.enter_url_to_download),
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.White.copy(alpha = 0.55f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         },
         singleLine = true,
         shape = RoundedCornerShape(32.dp),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { onDownloadClick() }),
+        keyboardActions = KeyboardActions(onDone = { if (!isFetchingInfo) onDownloadClick() }),
         trailingIcon = {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (value.isEmpty()) {
+                if (value.isEmpty() && !isFetchingInfo) {
                     IconButton(onClick = onPasteClick) {
                         Icon(
                             imageVector = Icons.Outlined.ContentPaste,
-                            contentDescription = "Paste",
-                            tint = MaterialTheme.colorScheme.primary
+                            contentDescription = stringResource(R.string.paste),
+                            tint = DestinyHome.BlueLight
                         )
                     }
                 }
-                
-                FilledIconButton(
-                    onClick = onDownloadClick,
+                Box(
                     modifier = Modifier
-                        .size(48.dp)
-                        .padding(end = 4.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = if (isGradientDark && isDarkTheme) {
-                            GradientDarkColors.GradientPrimaryStart
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        }
-                    )
+                        .padding(end = 8.dp)
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(DestinyHome.buttonBrush)
+                        .clickable(enabled = !isFetchingInfo, onClick = onDownloadClick),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.FileDownload,
-                        contentDescription = stringResource(R.string.download),
-                        tint = Color.White
-                    )
+                    if (isFetchingInfo) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.FileDownload,
+                            contentDescription = stringResource(R.string.download),
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         },
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = if (isGradientDark && isDarkTheme) {
-                GradientDarkColors.GradientPrimaryStart
-            } else {
-                MaterialTheme.colorScheme.primary
-            },
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            focusedBorderColor = DestinyHome.Blue,
+            unfocusedBorderColor = DestinyHome.Blue.copy(alpha = 0.35f),
+            focusedContainerColor = DestinyHome.CardBg,
+            unfocusedContainerColor = DestinyHome.CardBg,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = DestinyHome.BlueLight,
         )
     )
 }
@@ -1328,10 +1240,8 @@ fun RecentDownloadCard(
     modifier: Modifier = Modifier
 ) {
     val isDarkTheme = LocalDarkTheme.current.isDarkTheme()
-    val isGradientDark = LocalGradientDarkMode.current
+    val isGradientDark = true
     var showMenu by remember { mutableStateOf(false) }
-    // Use produceState so fileExists is re-checked on every recomposition trigger (refreshKey
-    // changes on ON_RESUME), and also whenever the video path itself changes.
     val fileExists by produceState(initialValue = java.io.File(downloadInfo.videoPath).exists(), key1 = downloadInfo.videoPath, key2 = refreshKey) {
         value = java.io.File(downloadInfo.videoPath).exists()
     }
@@ -1344,7 +1254,7 @@ fun RecentDownloadCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isGradientDark && isDarkTheme) {
-                GradientDarkColors.SurfaceVariant
+                DestinyHome.CardBg
             } else {
                 MaterialTheme.colorScheme.surfaceVariant
             }
@@ -1357,7 +1267,6 @@ fun RecentDownloadCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Thumbnail
             AsyncImage(
                 model = downloadInfo.thumbnailUrl,
                 contentDescription = null,
@@ -1367,8 +1276,7 @@ fun RecentDownloadCard(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentScale = ContentScale.Crop
             )
-            
-            // Content
+
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1378,9 +1286,10 @@ fun RecentDownloadCard(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (isGradientDark && isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -1399,7 +1308,7 @@ fun RecentDownloadCard(
                         Text(
                             text = "100%",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isGradientDark && isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
                         Icon(
@@ -1417,17 +1326,16 @@ fun RecentDownloadCard(
                     }
                 }
             }
-            
-            // More button with dropdown menu
+
             Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                 IconButton(onClick = { showMenu = true }) {
                     Icon(
                         imageVector = Icons.Outlined.MoreVert,
-                        contentDescription = "More options",
-                        tint = MaterialTheme.colorScheme.secondary
+                        contentDescription = "Mais opções",
+                        tint = if (isGradientDark && isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.secondary
                     )
                 }
-                
+
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false }
@@ -1516,9 +1424,9 @@ fun ActiveDownloadCard(
     modifier: Modifier = Modifier
 ) {
     val isDarkTheme = LocalDarkTheme.current.isDarkTheme()
-    val isGradientDark = LocalGradientDarkMode.current
+    val isGradientDark = true
     var showMenu by remember { mutableStateOf(false) }
-    
+
     val downloadState = state.downloadState
     val progress = when (downloadState) {
         is Task.DownloadState.Running -> downloadState.progress
@@ -1526,51 +1434,39 @@ fun ActiveDownloadCard(
         is Task.DownloadState.Canceled -> downloadState.progress ?: -1f
         else -> 0f
     }
-    
-    // Parse progress text to determine download phase
+
     val progressText = if (downloadState is Task.DownloadState.Running) downloadState.progressText else ""
     val context = androidx.compose.ui.platform.LocalContext.current
-    
-    // Track download state: format info -> video download -> audio download -> merging
+
     var hasSeenFormatInfo by remember { mutableStateOf(false) }
     var hasSeenVideoComplete by remember { mutableStateOf(false) }
     var currentPhase by remember { mutableStateOf("downloading") }
-    
-    // Determine phase based on progressText patterns
-    // NOTE: DownloaderV2 strips the "[download] " prefix before storing progressText,
-    // so download progress lines look like "45.3% of 10.00MiB at 2.50MiB/s ETA 00:03"
-    // or "100% of 10.00MiB in 00:04". We detect them by looking for the % sign with digits.
+
     val downloadPhase = when {
-        // Merging phase — [Merger] prefix is NOT stripped
         progressText.contains("[Merger]", ignoreCase = true) ||
-        progressText.contains("Merging formats", ignoreCase = true) -> {
+                progressText.contains("Merging formats", ignoreCase = true) -> {
             currentPhase = "merging"
             hasSeenVideoComplete = false
             hasSeenFormatInfo = false
             "merging"
         }
-        // Format info line — [info] prefix is NOT stripped
         progressText.contains("[info]", ignoreCase = true) && progressText.contains("format", ignoreCase = true) -> {
             hasSeenFormatInfo = true
             hasSeenVideoComplete = false
             currentPhase = "downloading"
             "downloading"
         }
-        // Download progress lines — "[download]" prefix stripped; match % pattern instead
         progressText.matches(Regex("""^\d+(\.\d+)?%.*""")) || progressText.contains("% of ") -> {
             when {
-                // 100% completion — video stream done, audio stream is next
                 (progressText.startsWith("100%") || progressText.contains("100% of ")) && !hasSeenVideoComplete -> {
                     hasSeenVideoComplete = true
                     currentPhase = "video"
                     "video"
                 }
-                // After video complete, any download progress is the audio stream
                 hasSeenVideoComplete -> {
                     currentPhase = "audio"
                     "audio"
                 }
-                // Before any 100% seen, first stream is always video
                 hasSeenFormatInfo -> {
                     currentPhase = "video"
                     "video"
@@ -1581,38 +1477,34 @@ fun ActiveDownloadCard(
                 }
             }
         }
-        // Post-download file operations — maintain current phase
         progressText.contains("Deleting original file", ignoreCase = true) ||
-        progressText.contains("[Metadata]", ignoreCase = true) ||
-        progressText.contains("[MoveFiles]", ignoreCase = true) -> {
+                progressText.contains("[Metadata]", ignoreCase = true) ||
+                progressText.contains("[MoveFiles]", ignoreCase = true) -> {
             currentPhase
         }
-        // yt-dlp re-outputs [youtube] / "Downloading webpage" lines between streams.
-        // In Running state we are always downloading (FetchingInfo state handles the fetch phase).
         progressText.contains("[youtube]", ignoreCase = true) ||
-        progressText.contains("Downloading webpage", ignoreCase = true) ||
-        progressText.contains("Downloading player", ignoreCase = true) -> {
+                progressText.contains("Downloading webpage", ignoreCase = true) ||
+                progressText.contains("Downloading player", ignoreCase = true) -> {
             if (hasSeenVideoComplete) {
-                // yt-dlp is initializing the second (audio) stream
                 currentPhase = "audio"
                 "audio"
             } else {
-                currentPhase  // Maintain current phase — never show "fetching" while running
+                currentPhase
             }
         }
         else -> currentPhase
     }
-    
+
     val statusText = when (downloadState) {
         is Task.DownloadState.Running -> {
             val pct = if (progress >= 0) " ${(progress * 100).toInt()}%" else ""
             when (downloadPhase) {
                 "merging" -> stringResource(R.string.status_merging)
-                "video"   -> "Downloading video...$pct"
-                "audio"   -> "Downloading audio...$pct"
+                "video"   -> "Baixando vídeo...$pct"
+                "audio"   -> "Baixando áudio...$pct"
                 "fetching" -> stringResource(R.string.fetching_info)
-                else -> if (progress >= 0) "Downloading... ${(progress * 100).toInt()}%"
-                        else stringResource(R.string.status_downloading)
+                else -> if (progress >= 0) "Baixando... ${(progress * 100).toInt()}%"
+                else stringResource(R.string.status_downloading)
             }
         }
         is Task.DownloadState.Paused -> if (progress >= 0) stringResource(R.string.status_paused) + " ${(progress * 100).toInt()}%" else stringResource(R.string.status_paused)
@@ -1620,15 +1512,14 @@ fun ActiveDownloadCard(
         is Task.DownloadState.Error -> stringResource(R.string.download_error)
         is Task.DownloadState.Completed -> stringResource(R.string.completed) + " 100%"
         is Task.DownloadState.FetchingInfo -> stringResource(R.string.fetching_info)
-        // Idle = waiting for a download slot to open; ReadyWithInfo = info fetched, waiting to start
         Task.DownloadState.Idle,
         Task.DownloadState.ReadyWithInfo -> stringResource(R.string.queue_status)
         else -> ""
     }
-    
+
     val statusColor = when (downloadState) {
         is Task.DownloadState.Running -> if (isGradientDark && isDarkTheme) {
-            GradientDarkColors.GradientPrimaryStart
+            DestinyHome.Blue
         } else {
             MaterialTheme.colorScheme.primary
         }
@@ -1639,8 +1530,6 @@ fun ActiveDownloadCard(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    // Parse speed and ETA from yt-dlp progressText.
-    // Example line: "45.3% of 10.00MiB at 2.50MiB/s ETA 00:03"
     val speedEtaText = if (downloadState is Task.DownloadState.Running && progressText.isNotEmpty()) {
         val speed = Regex("""at\s+([\d.]+\s*\S+/s)""").find(progressText)?.groupValues?.get(1)
         val eta = Regex("""ETA\s+(\d+:\d+)""").find(progressText)?.groupValues?.get(1)
@@ -1651,13 +1540,13 @@ fun ActiveDownloadCard(
             else -> null
         }
     } else null
-    
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isGradientDark && isDarkTheme) {
-                GradientDarkColors.SurfaceVariant
+                DestinyHome.CardBg
             } else {
                 MaterialTheme.colorScheme.surfaceVariant
             }
@@ -1673,7 +1562,6 @@ fun ActiveDownloadCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Thumbnail
                 state.videoInfo?.thumbnail?.let { thumbnailUrl ->
                     AsyncImage(
                         model = thumbnailUrl,
@@ -1697,8 +1585,7 @@ fun ActiveDownloadCard(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                
-                // Content
+
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -1710,9 +1597,11 @@ fun ActiveDownloadCard(
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        // FIX: Cor do texto garantida para ficar visível no fundo escuro
+                        color = if (isGradientDark && isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
                     )
-                    
+
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -1723,13 +1612,12 @@ fun ActiveDownloadCard(
                             color = statusColor,
                             fontWeight = FontWeight.Medium
                         )
-                        
-                        // Show Queue badge for Idle or ReadyWithInfo tasks
+
                         if (downloadState is Task.DownloadState.Idle || downloadState is Task.DownloadState.ReadyWithInfo) {
                             androidx.compose.material3.Surface(
                                 shape = RoundedCornerShape(4.dp),
                                 color = if (isGradientDark && isDarkTheme) {
-                                    GradientDarkColors.GradientSecondaryStart.copy(alpha = 0.3f)
+                                    DestinyHome.BlueDeep.copy(alpha = 0.3f)
                                 } else {
                                     MaterialTheme.colorScheme.secondaryContainer
                                 }
@@ -1738,7 +1626,7 @@ fun ActiveDownloadCard(
                                     text = stringResource(R.string.queue_status),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (isGradientDark && isDarkTheme) {
-                                        GradientDarkColors.GradientSecondaryEnd
+                                        DestinyHome.BlueLight
                                     } else {
                                         MaterialTheme.colorScheme.onSecondaryContainer
                                     },
@@ -1749,19 +1637,18 @@ fun ActiveDownloadCard(
                         }
                     }
 
-                    // Speed + ETA line — only shown during active download
                     if (speedEtaText != null) {
                         Text(
                             text = speedEtaText,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            // FIX: Cor do texto garantida para ficar visível no fundo escuro
+                            color = if (isGradientDark && isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
-                
-                // Pause/Resume action button
+
                 if (downloadState is Task.DownloadState.Running) {
                     IconButton(
                         onClick = { onAction(UiAction.Pause) },
@@ -1770,12 +1657,12 @@ fun ActiveDownloadCard(
                         Icon(
                             imageVector = Icons.Outlined.Pause,
                             contentDescription = stringResource(R.string.pause),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = if (isGradientDark && isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 }
-                
+
                 if (downloadState is Task.DownloadState.Paused) {
                     IconButton(
                         onClick = { onAction(UiAction.Resume) },
@@ -1784,29 +1671,27 @@ fun ActiveDownloadCard(
                         Icon(
                             imageVector = Icons.Outlined.PlayArrow,
                             contentDescription = stringResource(R.string.resume),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = if (isGradientDark && isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 }
-                
-                // More button with dropdown menu
+
                 Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
                             imageVector = Icons.Outlined.MoreVert,
-                            contentDescription = "More options",
-                            tint = MaterialTheme.colorScheme.secondary
+                            contentDescription = "Mais opções",
+                            tint = if (isGradientDark && isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.secondary
                         )
                     }
-                    
+
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
                         val downloadState = state.downloadState
-                        
-                        // Pause option for running downloads
+
                         if (downloadState is Task.DownloadState.Running) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.pause)) },
@@ -1823,8 +1708,7 @@ fun ActiveDownloadCard(
                                 }
                             )
                         }
-                        
-                        // Resume option for paused downloads
+
                         if (downloadState is Task.DownloadState.Paused) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.resume)) },
@@ -1841,8 +1725,7 @@ fun ActiveDownloadCard(
                                 }
                             )
                         }
-                        
-                        // Retry option for canceled or failed downloads
+
                         if (downloadState is Task.DownloadState.Canceled || downloadState is Task.DownloadState.Error) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.retry)) },
@@ -1859,10 +1742,7 @@ fun ActiveDownloadCard(
                                 }
                             )
                         }
-                        
-                        // Cancel option for running/fetching/paused/queued downloads.
-                        // Idle and ReadyWithInfo are queued states — DownloaderV2.cancelImpl()
-                        // handles them correctly but the UI must expose the action.
+
                         if (downloadState is Task.DownloadState.Running ||
                             downloadState is Task.DownloadState.FetchingInfo ||
                             downloadState is Task.DownloadState.Paused ||
@@ -1883,8 +1763,7 @@ fun ActiveDownloadCard(
                                 }
                             )
                         }
-                        
-                        // Copy link option
+
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.copy_link)) },
                             onClick = {
@@ -1899,8 +1778,7 @@ fun ActiveDownloadCard(
                                 )
                             }
                         )
-                        
-                        // Details option (only for completed downloads)
+
                         if (downloadState is Task.DownloadState.Completed) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.details)) },
@@ -1917,8 +1795,7 @@ fun ActiveDownloadCard(
                                 }
                             )
                         }
-                        
-                        // Delete option
+
                         if (downloadState is Task.DownloadState.Completed || downloadState is Task.DownloadState.Error || downloadState is Task.DownloadState.Canceled) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.delete)) },
@@ -1938,32 +1815,70 @@ fun ActiveDownloadCard(
                     }
                 }
             }
-            
-            // Progress bar for active and paused downloads
+
+            // Barra de Progresso Customizada
             if (downloadState is Task.DownloadState.Running || downloadState is Task.DownloadState.Paused) {
                 val barColor = when (downloadState) {
                     is Task.DownloadState.Paused -> Color(0xFFFBBF24)
-                    else -> if (isGradientDark && isDarkTheme) GradientDarkColors.GradientPrimaryStart
-                            else MaterialTheme.colorScheme.primary
+                    else -> if (isGradientDark && isDarkTheme) DestinyHome.Blue
+                    else MaterialTheme.colorScheme.primary
                 }
-                if (progress >= 0) {
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth(),
-                        color = barColor,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                } else {
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = barColor,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
+                DestinyProgressBar(
+                    progress = if (progress >= 0) progress else null,
+                    color = barColor
+                )
             }
         }
     }
 }
+
+@Composable
+fun DestinyProgressBar(
+    progress: Float?,
+    modifier: Modifier = Modifier,
+    color: Color = DestinyHome.Blue
+) {
+    val animatedProgress = if (progress != null) {
+        animateFloatAsState(targetValue = progress, animationSpec = tween(500), label = "progress").value
+    } else null
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(6.dp)
+            .clip(RoundedCornerShape(3.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        val width = maxWidth
+        if (animatedProgress != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(animatedProgress)
+                    .background(Brush.horizontalGradient(listOf(color, DestinyHome.BlueLight)))
+            )
+        } else {
+            val infiniteTransition = rememberInfiniteTransition(label = "indeterminate")
+            val offset by infiniteTransition.animateFloat(
+                initialValue = -0.5f,
+                targetValue = 1.5f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1200, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "offset"
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.5f)
+                    .offset(x = width * offset)
+                    .background(Brush.horizontalGradient(listOf(Color.Transparent, color, Color.Transparent)))
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadDetailsDialog(
@@ -1975,11 +1890,11 @@ fun DownloadDetailsDialog(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     var showFilePathDialog by remember { mutableStateOf(false) }
-    
+
     BackHandler {
         onDismiss()
     }
-    
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
@@ -1990,7 +1905,6 @@ fun DownloadDetailsDialog(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 32.dp)
         ) {
-            // Header with gradient background
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -2021,8 +1935,7 @@ fun DownloadDetailsDialog(
                     )
                 }
             }
-            
-            // Thumbnail Card
+
             state.videoInfo?.thumbnail?.let { thumbnailUrl ->
                 Card(
                     modifier = Modifier
@@ -2043,8 +1956,7 @@ fun DownloadDetailsDialog(
                     )
                 }
             }
-            
-            // Media Information Section
+
             Text(
                 text = stringResource(R.string.media_info),
                 style = MaterialTheme.typography.titleMedium,
@@ -2052,15 +1964,13 @@ fun DownloadDetailsDialog(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                 color = MaterialTheme.colorScheme.primary
             )
-            
-            // Grid Layout for Details
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Row 1: File Format and File Size
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -2075,7 +1985,7 @@ fun DownloadDetailsDialog(
                             )
                         }
                     }
-                    
+
                     val fileSize = state.viewState.fileSizeApprox
                     if (fileSize > 0) {
                         DetailCard(
@@ -2086,8 +1996,7 @@ fun DownloadDetailsDialog(
                         )
                     }
                 }
-                
-                // Row 2: Creator and Platform
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -2100,7 +2009,7 @@ fun DownloadDetailsDialog(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    
+
                     if (state.viewState.extractorKey.isNotBlank()) {
                         DetailCard(
                             icon = Icons.Outlined.Language,
@@ -2110,8 +2019,7 @@ fun DownloadDetailsDialog(
                         )
                     }
                 }
-                
-                // Row 3: File Path and Download Date
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -2127,17 +2035,16 @@ fun DownloadDetailsDialog(
                             )
                         }
                     }
-                    
+
                     DetailCard(
                         icon = Icons.Outlined.CalendarToday,
                         label = stringResource(R.string.download_date),
-                        value = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                        value = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
                             .format(java.util.Date(task.timeCreated)),
                         modifier = Modifier.weight(1f)
                     )
                 }
-                
-                // Source URL Card
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2185,12 +2092,11 @@ fun DownloadDetailsDialog(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-    
-    // File Path Dialog
+
     if (showFilePathDialog && state.downloadState is Task.DownloadState.Completed) {
         state.downloadState.filePath?.let { path ->
             AlertDialog(
@@ -2219,12 +2125,6 @@ fun DownloadDetailsDialog(
     }
 }
 
-/**
- * Spotify-style swipeable download-details sheet. Wraps a [HorizontalPager] over
- * [downloadInfoList] so the user can swipe left/right to move between the details of
- * adjacent recent-download cards without closing and reopening the sheet. When the list
- * has only one item, the pager still mounts but swiping is disabled (no-op, no crash).
- */
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun RecentDownloadDetailsDialog(
@@ -2239,24 +2139,6 @@ fun RecentDownloadDetailsDialog(
     ) { downloadInfoList.size }
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
 
-    // BUG FIX — continuous up/down flicker after releasing a swipe-up gesture:
-    //
-    // The sheet's own drag-to-expand/dismiss gesture and each page's inner verticalScroll
-    // both live on the same vertical axis. Once a swipe-up reaches the top/bottom of the
-    // scrollable content, any velocity/delta the inner scroll can't consume is normally
-    // handed UP to the ModalBottomSheet's drag handler (that's how nested scroll works by
-    // default: children consume first, parents get the "pre" pass and any leftovers).
-    // Because the sheet height is a fixed 85% of the screen, its resting/expanded anchor sits
-    // very close to the content's natural bounds on most devices — so that tiny leftover
-    // delta/velocity is just enough to nudge the sheet, which nudges the scroll state back,
-    // which nudges the sheet again... an unstable feedback loop that never settles. That is
-    // the repeating up/down flicker: it does not stop on its own once triggered by a
-    // swipe-and-release.
-    //
-    // Fix: swallow all scroll deltas AND fling velocity in a NestedScrollConnection placed
-    // between the pager/content and the ModalBottomSheet, so nothing above this point ever
-    // sees "leftover" scroll to react to. The sheet still drags normally from its own drag
-    // handle / empty areas — this only isolates the content's internal scrolling.
     val swallowNestedScroll = remember {
         object : NestedScrollConnection {
             override fun onPostScroll(
@@ -2283,7 +2165,6 @@ fun RecentDownloadDetailsDialog(
                 .fillMaxWidth()
                 .nestedScroll(swallowNestedScroll),
         ) {
-            // Page indicator dots — only shown when there's more than one item to swipe between.
             if (downloadInfoList.size > 1) {
                 Row(
                     modifier = Modifier
@@ -2307,21 +2188,12 @@ fun RecentDownloadDetailsDialog(
                 }
             }
 
-            // IMPORTANT: use a FIXED height here (not heightIn(max=...)). Each page's intrinsic
-            // content height differs (some items have extra detail rows, longer URLs, etc.).
-            // With only a max-height constraint, HorizontalPager re-measures its own height to
-            // match whichever page is being settled on during a drag, and that continuous
-            // height renegotiation while the inner verticalScroll is also tracking its own
-            // bounds is what produced the up/down flicker when scrolling a page to its end.
-            // Giving every page the exact same fixed height removes that feedback loop entirely.
             val pagerHeight = (configuration.screenHeightDp * 0.85f).dp
             androidx.compose.foundation.pager.HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(pagerHeight),
-                // Disable swipe gestures entirely when there's nothing to swipe to — keeps a
-                // single-item list on its one and only details page with no dead gesture area.
                 userScrollEnabled = downloadInfoList.size > 1,
             ) { page ->
                 RecentDownloadDetailsContent(
@@ -2347,253 +2219,238 @@ private fun RecentDownloadDetailsContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 32.dp)
     ) {
-            // Header with gradient background
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                MaterialTheme.colorScheme.surface
-                            )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                            MaterialTheme.colorScheme.surface
                         )
                     )
-                    .padding(24.dp)
+                )
+                .padding(24.dp)
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.download_details),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = downloadInfo.videoTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            AsyncImage(
+                model = downloadInfo.thumbnailUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        Text(
+            text = stringResource(R.string.media_info),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        val file = java.io.File(downloadInfo.videoPath)
+        val fileExtension = downloadInfo.videoPath.substringAfterLast(".", "")
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column {
-                    Text(
-                        text = stringResource(R.string.download_details),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                if (fileExtension.isNotEmpty()) {
+                    DetailCard(
+                        icon = Icons.Outlined.VideoFile,
+                        label = stringResource(R.string.file_format),
+                        value = fileExtension.uppercase(),
+                        modifier = Modifier.weight(1f)
                     )
-                    Text(
-                        text = downloadInfo.videoTitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 8.dp)
+                }
+
+                if (file.exists()) {
+                    val fileSize = file.length()
+                    DetailCard(
+                        icon = Icons.Outlined.Storage,
+                        label = stringResource(R.string.file_size),
+                        value = fileSize.toFileSizeText(),
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
-            
-            // Thumbnail Card
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                val resolution by produceState(initialValue = "N/A", key1 = downloadInfo.videoPath) {
+                    value = withContext(Dispatchers.IO) {
+                        val retriever = android.media.MediaMetadataRetriever()
+                        try {
+                            if (file.exists()) {
+                                retriever.setDataSource(downloadInfo.videoPath)
+                                val width = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                                val height = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                                if (width != null && height != null) "${width}x${height}" else "N/A"
+                            } else "N/A"
+                        } catch (e: Exception) {
+                            "N/A"
+                        } finally {
+                            retriever.release()
+                        }
+                    }
+                }
+
+                if (resolution != "N/A") {
+                    DetailCard(
+                        icon = Icons.Outlined.HighQuality,
+                        label = stringResource(R.string.resolution),
+                        value = resolution,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                DetailCard(
+                    icon = Icons.Outlined.Language,
+                    label = stringResource(R.string.platform),
+                    value = downloadInfo.extractor,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DetailCard(
+                    icon = Icons.Outlined.Folder,
+                    label = stringResource(R.string.file_path),
+                    value = downloadInfo.videoPath,
+                    modifier = Modifier.weight(1f),
+                    onClick = { showFilePathDialog = true }
+                )
+
+                val downloadDate = if (file.exists()) {
+                    java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                        .format(java.util.Date(file.lastModified()))
+                } else {
+                    "N/A"
+                }
+                DetailCard(
+                    icon = Icons.Outlined.CalendarToday,
+                    label = stringResource(R.string.download_date),
+                    value = downloadDate,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            if (downloadInfo.downloadTimeMillis > 0L || downloadInfo.averageSpeedBytesPerSec > 0L) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (downloadInfo.downloadTimeMillis > 0L) {
+                        DetailCard(
+                            icon = Icons.Outlined.Timer,
+                            label = stringResource(R.string.download_time),
+                            value = formatDownloadTime(downloadInfo.downloadTimeMillis),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    if (downloadInfo.averageSpeedBytesPerSec > 0L) {
+                        DetailCard(
+                            icon = Icons.Outlined.Speed,
+                            label = stringResource(R.string.average_speed),
+                            value = formatAverageSpeed(downloadInfo.averageSpeedBytesPerSec),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    .clickable {
+                        clipboardManager.setText(AnnotatedString(downloadInfo.videoUrl))
+                        context.makeToast(R.string.link_copied)
+                    },
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                AsyncImage(
-                    model = downloadInfo.thumbnailUrl,
-                    contentDescription = null,
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp),
-                    contentScale = ContentScale.Crop
-                )
-            }
-            
-            // Media Information Section
-            Text(
-                text = stringResource(R.string.media_info),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            // Grid Layout for Details
-            val file = java.io.File(downloadInfo.videoPath)
-            val fileExtension = downloadInfo.videoPath.substringAfterLast(".", "")
-            
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Row 1: File Format and File Size
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(16.dp)
                 ) {
-                    if (fileExtension.isNotEmpty()) {
-                        DetailCard(
-                            icon = Icons.Outlined.VideoFile,
-                            label = stringResource(R.string.file_format),
-                            value = fileExtension.uppercase(),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    
-                    if (file.exists()) {
-                        val fileSize = file.length()
-                        DetailCard(
-                            icon = Icons.Outlined.Storage,
-                            label = stringResource(R.string.file_size),
-                            value = fileSize.toFileSizeText(),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                
-                // Row 2: Resolution and Platform
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Extract resolution from video file.
-                    // Uses produceState + Dispatchers.IO so the blocking MediaMetadataRetriever
-                    // call never runs on the main thread (avoids ANR / frame drops on large
-                    // files or slow storage). try/finally guarantees release() even if
-                    // setDataSource() throws (minSdk=24, AutoCloseable added in API 29).
-                    val resolution by produceState(initialValue = "N/A", key1 = downloadInfo.videoPath) {
-                        value = withContext(Dispatchers.IO) {
-                            val retriever = android.media.MediaMetadataRetriever()
-                            try {
-                                if (file.exists()) {
-                                    retriever.setDataSource(downloadInfo.videoPath)
-                                    val width = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-                                    val height = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-                                    if (width != null && height != null) "${width}x${height}" else "N/A"
-                                } else "N/A"
-                            } catch (e: Exception) {
-                                "N/A"
-                            } finally {
-                                retriever.release()
-                            }
-                        }
-                    }
-                    
-                    if (resolution != "N/A") {
-                        DetailCard(
-                            icon = Icons.Outlined.HighQuality,
-                            label = stringResource(R.string.resolution),
-                            value = resolution,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    
-                    DetailCard(
-                        icon = Icons.Outlined.Language,
-                        label = stringResource(R.string.platform),
-                        value = downloadInfo.extractor,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                
-                // Row 3: File Path and Download Date
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    DetailCard(
-                        icon = Icons.Outlined.Folder,
-                        label = stringResource(R.string.file_path),
-                        value = downloadInfo.videoPath,
-                        modifier = Modifier.weight(1f),
-                        onClick = { showFilePathDialog = true }
-                    )
-                    
-                    val downloadDate = if (file.exists()) {
-                        java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
-                            .format(java.util.Date(file.lastModified()))
-                    } else {
-                        "N/A"
-                    }
-                    DetailCard(
-                        icon = Icons.Outlined.CalendarToday,
-                        label = stringResource(R.string.download_date),
-                        value = downloadDate,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                // Row 4: Download Time and Average Speed
-                if (downloadInfo.downloadTimeMillis > 0L || downloadInfo.averageSpeedBytesPerSec > 0L) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (downloadInfo.downloadTimeMillis > 0L) {
-                            DetailCard(
-                                icon = Icons.Outlined.Timer,
-                                label = stringResource(R.string.download_time),
-                                value = formatDownloadTime(downloadInfo.downloadTimeMillis),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        if (downloadInfo.averageSpeedBytesPerSec > 0L) {
-                            DetailCard(
-                                icon = Icons.Outlined.Speed,
-                                label = stringResource(R.string.average_speed),
-                                value = formatAverageSpeed(downloadInfo.averageSpeedBytesPerSec),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Outlined.Link,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.source_url),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                }
-
-                // Source URL Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            clipboardManager.setText(AnnotatedString(downloadInfo.videoUrl))
-                            context.makeToast(R.string.link_copied)
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Link,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = stringResource(R.string.source_url),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        SelectionContainer {
-                            Text(
-                                text = downloadInfo.videoUrl,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SelectionContainer {
+                        Text(
+                            text = downloadInfo.videoUrl,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 
-    // File Path Dialog
     if (showFilePathDialog) {
         AlertDialog(
             onDismissRequest = { showFilePathDialog = false },
@@ -2696,41 +2553,21 @@ private fun DetailCard(
     }
 }
 
-/**
- * Returns a numeric sort priority for a [Task.DownloadState] so that the
- * Recent Downloads list always shows items in the order:
- *
- *   Running                (0)    →  actively downloading NOW
- *   FetchingInfo           (1)    →  actively fetching metadata NOW
- *   ReadyWithInfo          (2)    →  info fetched, waiting for a download slot
- *   Idle                   (3)    →  just queued, nothing started yet
- *   Paused                 (4)    →  user-paused
- *   Canceled               (5)    →  user-canceled
- *   Error                  (6)    →  failed
- *   Completed              (7)    →  transition state before DB flush
- *
- * Lower number = shown closer to the top of the list.
- */
 private fun downloadStateSortPriority(state: Task.DownloadState): Int = when (state) {
-    is Task.DownloadState.Running       -> 0  // actively downloading right now
-    is Task.DownloadState.FetchingInfo  -> 1  // actively fetching metadata right now
-    Task.DownloadState.ReadyWithInfo    -> 2  // info fetched, waiting for a download slot — more advanced than Idle
-    Task.DownloadState.Idle             -> 3  // just queued, nothing started yet
-    is Task.DownloadState.Paused        -> 4  // user-paused
-    is Task.DownloadState.Canceled      -> 5  // user-canceled
-    is Task.DownloadState.Error         -> 6  // failed
-    is Task.DownloadState.Completed     -> 7  // done, transitioning to DB section
+    is Task.DownloadState.Running       -> 0
+    is Task.DownloadState.FetchingInfo  -> 1
+    Task.DownloadState.ReadyWithInfo    -> 2
+    Task.DownloadState.Idle             -> 3
+    is Task.DownloadState.Paused        -> 4
+    is Task.DownloadState.Canceled      -> 5
+    is Task.DownloadState.Error         -> 6
+    is Task.DownloadState.Completed     -> 7
 }
 
-/**
- * Animated glowing "+" text with continuously cycling gradient colors
- * and a pulsing glow effect that matches the app theme.
- */
 @Composable
 fun AnimatedGlowingPlus() {
     val infiniteTransition = rememberInfiniteTransition(label = "plusGlow")
 
-    // Animate the gradient offset to make colors flow continuously
     val gradientShift by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1500f,
@@ -2741,7 +2578,6 @@ fun AnimatedGlowingPlus() {
         label = "gradientShift"
     )
 
-    // Animate glow intensity (pulsing alpha for the shadow)
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
         targetValue = 1f,
@@ -2785,16 +2621,6 @@ fun AnimatedGlowingPlus() {
     )
 }
 
-/**
- * Quick-access row for the 4 More Tools (Batch URL Import, Thumbnail Download, Video Info
- * Download, Comment Download), placed between the "Seal+" branding and the URL input field.
- *
- * Icon-only by design — no labels/section header — so it reads as a native strip of shortcuts
- * baked into the home screen rather than a bolted-on section. Colors reuse the same
- * primary/secondary/tertiary role-color language already used for icons in the nav drawer and
- * the More Tools page ([ThemedIconColors]), so the row feels like part of the existing UI
- * instead of a new visual style.
- */
 private data class QuickTool(
     val icon: ImageVector,
     val labelRes: Int,
@@ -2844,8 +2670,6 @@ private fun QuickToolsRow(
         )
     }
 
-    // Gentle entrance animation (fade + rise), matching the staggered-card language used
-    // elsewhere in the app (e.g. MoreToolsPage's ToolCard) instead of appearing abruptly.
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
@@ -2906,37 +2730,51 @@ private fun QuickToolIcon(
 
     val tint = tool.tint()
 
-    Box(
+    val fullLabel = stringResource(tool.labelRes)
+    val shortLabel = fullLabel.split(" ").take(2).joinToString(" ")
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .graphicsLayer(alpha = alpha)
             .offset(y = offsetY)
-            .scale(scale)
-            // Sized to match the same icon-badge scale used for icons in the nav drawer /
-            // More Tools page (44dp container / 22dp glyph) instead of the earlier oversized
-            // 56dp/26dp, so this row reads proportionate on every screen size from small
-            // phones to tablets rather than dominating the space between the title and search
-            // bar.
-            .size(44.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(tint.copy(alpha = 0.12f))
-            .combinedClickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = {
-                    view.slightHapticFeedback()
-                    tool.onClick()
-                },
-                onLongClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                },
-            ),
-        contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            imageVector = tool.icon,
-            contentDescription = stringResource(tool.labelRes),
-            tint = tint,
-            modifier = Modifier.size(22.dp),
+        Box(
+            modifier = Modifier
+                .scale(scale)
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(tint.copy(alpha = 0.12f))
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = {
+                        view.slightHapticFeedback()
+                        tool.onClick()
+                    },
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = tool.icon,
+                contentDescription = stringResource(tool.labelRes),
+                tint = tint,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Text(
+            text = shortLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .padding(top = 6.dp)
+                .width(64.dp),
+            textAlign = TextAlign.Center
         )
     }
 }

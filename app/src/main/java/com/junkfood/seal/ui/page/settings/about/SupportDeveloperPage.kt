@@ -1,15 +1,13 @@
 package com.junkfood.seal.ui.page.settings.about
 
 import android.content.ClipData
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.Image
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.annotation.DrawableRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
@@ -22,31 +20,33 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.junkfood.seal.R
 import com.junkfood.seal.ui.common.LocalDarkTheme
 import com.junkfood.seal.ui.common.LocalGradientDarkMode
 import com.junkfood.seal.ui.theme.GradientBrushes
 import com.junkfood.seal.util.makeToast
 
-private const val TAG = "SupportDeveloperPage"
+private const val APP_NAME = "Destiny"
+private const val DEVELOPER_NAME = "Campos"
+private const val GITHUB_USER = "camposeb"
+private const val GITHUB_URL = "https://github.com/camposeb"
+
+// ⚠️ Use uma chave Pix ALEATÓRIA aqui.
+// A chave fica visível no APK e no repositório público — não use CPF, telefone ou e-mail.
+// Gere em: app do seu banco > Pix > Minhas chaves > Criar chave aleatória.
+private const val PIX_KEY = "b6b3d5bd-0c6c-4b08-b928-845ab7e90252"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SupportDeveloperPage(
     onNavigateBack: () -> Unit,
-    onNavigateToSponsors: () -> Unit = {},
-    onNavigateToCrypto: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val clipboardManager = LocalClipboardManager.current
     val isDarkTheme = LocalDarkTheme.current.isDarkTheme()
     val isGradientDark = LocalGradientDarkMode.current
 
@@ -58,18 +58,18 @@ fun SupportDeveloperPage(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "Support Developer",
+                        "Apoiar Desenvolvedor",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Voltar"
                         )
                     }
                 },
@@ -88,7 +88,7 @@ fun SupportDeveloperPage(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Header with gradient
+            // Cabeçalho com gradiente
             item {
                 Box(
                     modifier = Modifier
@@ -117,35 +117,35 @@ fun SupportDeveloperPage(
                             imageVector = Icons.Outlined.Favorite,
                             contentDescription = null,
                             modifier = Modifier.size(56.dp),
-                            tint = if (isDarkTheme && isGradientDark) 
-                                Color.White 
-                            else 
+                            tint = if (isDarkTheme && isGradientDark)
+                                Color.White
+                            else
                                 MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "Support the Development",
+                            text = "Apoie o Desenvolvimento",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
-                            color = if (isDarkTheme && isGradientDark) 
-                                Color.White 
-                            else 
+                            color = if (isDarkTheme && isGradientDark)
+                                Color.White
+                            else
                                 MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "Your support helps keep Seal Plus free and actively maintained",
+                            text = "O $APP_NAME é gratuito e sem anúncios. Se ele te ajudou, considere apoiar com um Pix.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
-                            color = if (isDarkTheme && isGradientDark) 
-                                Color.White.copy(alpha = 0.9f) 
-                            else 
+                            color = if (isDarkTheme && isGradientDark)
+                                Color.White.copy(alpha = 0.9f)
+                            else
                                 MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
                     }
                 }
             }
-            
-            // Developer Info Card
+
+            // Informações do desenvolvedor
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -161,17 +161,16 @@ fun SupportDeveloperPage(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "About the Developer",
+                            text = "Sobre o Desenvolvedor",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        
+
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         )
-                        
-                        // Developer Name
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -185,27 +184,24 @@ fun SupportDeveloperPage(
                             )
                             Column {
                                 Text(
-                                    text = "Developer",
+                                    text = "Desenvolvedor",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                                 Text(
-                                    text = "Mahesh Varma",
+                                    text = DEVELOPER_NAME,
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-                        
-                        // GitHub Link
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .clickable {
-                                    uriHandler.openUri("https://github.com/MaheshTechnicals")
-                                }
+                                .clickable { uriHandler.openUri(GITHUB_URL) }
                                 .padding(12.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -223,7 +219,7 @@ fun SupportDeveloperPage(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                                 Text(
-                                    text = "@MaheshTechnicals",
+                                    text = "@$GITHUB_USER",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.primary
@@ -239,118 +235,52 @@ fun SupportDeveloperPage(
                     }
                 }
             }
-            
-            // Donation Options Section
+
+            // Opções de apoio
             item {
                 Text(
-                    text = "Support Options",
+                    text = "Opções de Apoio",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
-            
-            // UPI Payment
+
+            // Pix
             item {
                 DonationOptionCard(
-                    iconRes = R.drawable.google_pay,
-                    title = "UPI Payment",
-                    description = "MaheshTechnicals@idbi",
-                    gradient = if (isDarkTheme && isGradientDark) {
-                        GradientBrushes.Primary
-                    } else {
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF6366F1),
-                                Color(0xFF8B5CF6)
-                            )
-                        )
-                    },
-                    onClick = {
-                        openUpiPayment(
-                            context = context,
-                            upiId = "MaheshTechnicals@idbi",
-                            name = "Mahesh Technicals",
-                            note = "Support Seal Plus Development"
-                        )
-                    }
-                )
-            }
-            
-            // PayPal
-            item {
-                DonationOptionCard(
-                    iconRes = R.drawable.paypal,
-                    title = "PayPal",
-                    description = "Support via PayPal",
-                    gradient = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF0070BA),
-                            Color(0xFF1546A0)
-                        )
-                    ),
-                    onClick = {
-                        uriHandler.openUri("https://www.paypal.com/paypalme/Varma161")
-                    }
-                )
-            }
-            
-            // GitHub Sponsors
-            item {
-                DonationOptionCard(
-                    iconRes = R.drawable.github,
-                    title = "GitHub Sponsors",
-                    description = "Support via GitHub Sponsors",
-                    gradient = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF4078C0),
-                            Color(0xFF333333)
-                        )
-                    ),
-                    onClick = {
-                        uriHandler.openUri("https://github.com/sponsors/MaheshTechnicals")
-                    }
-                )
-            }
-            
-            // Crypto Currency
-            item {
-                DonationOptionCard(
-                    iconRes = R.drawable.bitcoin,
-                    title = "Crypto Currency",
-                    description = "Support via USDT (BEP20)",
-                    gradient = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFFF7931A),
-                            Color(0xFFF9B24D)
-                        )
-                    ),
-                    onClick = { onNavigateToCrypto() }
-                )
-            }
-            
-            // Our Sponsors
-            item {
-                DonationOptionCard(
-                    icon = Icons.Outlined.Group,
+                    icon = Icons.Outlined.Payments,
                     iconTint = Color.Black,
-                    title = "Our Sponsors",
-                    description = "View our amazing supporters",
-                    gradient = if (isDarkTheme && isGradientDark) {
-                        GradientBrushes.Accent
-                    } else {
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFFEC4899),
-                                Color(0xFFF97316)
-                            )
+                    title = "Pix",
+                    description = PIX_KEY,
+                    gradient = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF32BCAD),
+                            Color(0xFF1E8E7E)
                         )
-                    },
-                    onClick = { onNavigateToSponsors() }
+                    ),
+                    onClick = { copiarPix(context, PIX_KEY) }
                 )
             }
-            
-            // Footer Message
+
+            // Botão dedicado para copiar a chave
+            item {
+                OutlinedButton(
+                    onClick = { copiarPix(context, PIX_KEY) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ContentCopy,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copiar chave Pix")
+                }
+            }
+
+            // Mensagem final
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -373,7 +303,7 @@ fun SupportDeveloperPage(
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
-                            text = "All donations help maintain and improve Seal Plus. Thank you for your support! 💙",
+                            text = "O $APP_NAME é gratuito e sem anúncios. Se ele te ajudou, considere apoiar com um Pix. Obrigado! 💙",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f)
@@ -381,8 +311,8 @@ fun SupportDeveloperPage(
                     }
                 }
             }
-            
-            // Bottom spacing
+
+            // Espaçamento inferior
             item {
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -391,58 +321,19 @@ fun SupportDeveloperPage(
 }
 
 /**
- * Opens UPI payment intent with pre-filled UPI ID
- * Shows all available UPI apps (Google Pay, PhonePe, Paytm, BHIM, etc.)
- * 
- * @param context Android context
- * @param upiId UPI ID of the payee
- * @param name Name of the payee
- * @param note Transaction note/description
+ * Copia a chave Pix para a área de transferência e mostra um toast.
  */
-private fun openUpiPayment(
-    context: android.content.Context,
-    upiId: String,
-    name: String,
-    note: String = ""
-) {
-    try {
-        // Build UPI payment URI
-        // Format: upi://pay?pa=UPI_ID&pn=NAME&tn=NOTE&cu=CURRENCY
-        val uri = Uri.parse("upi://pay").buildUpon()
-            .appendQueryParameter("pa", upiId)  // Payee address (UPI ID)
-            .appendQueryParameter("pn", name)    // Payee name
-            .appendQueryParameter("tn", note)    // Transaction note
-            .appendQueryParameter("cu", "INR")   // Currency
-            .build()
-        
-        // Create intent to handle UPI payment
-        val intent = Intent(Intent.ACTION_VIEW, uri)
-        
-        // Show chooser with all available UPI apps
-        val chooser = Intent.createChooser(intent, "Pay with")
-        context.startActivity(chooser)
-        
-    } catch (e: android.content.ActivityNotFoundException) {
-        // No UPI app found - copy to clipboard as fallback
-        val clipboardManager = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) 
-            as android.content.ClipboardManager
-        val clip = android.content.ClipData.newPlainText("UPI ID", upiId)
-        clipboardManager.setPrimaryClip(clip)
-        context.makeToast("No UPI apps found. UPI ID copied to clipboard")
-    } catch (e: Exception) {
-        // Other error - copy to clipboard as fallback
-        val clipboardManager = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) 
-            as android.content.ClipboardManager
-        val clip = android.content.ClipData.newPlainText("UPI ID", upiId)
-        clipboardManager.setPrimaryClip(clip)
-        context.makeToast("Error opening UPI app. UPI ID copied to clipboard")
-    }
+private fun copiarPix(context: Context, pixKey: String) {
+    val clipboardManager =
+        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = ClipData.newPlainText("Chave Pix", pixKey)
+    clipboardManager.setPrimaryClip(clip)
+    context.makeToast("Chave Pix copiada")
 }
 
 @Composable
 private fun DonationOptionCard(
-    @DrawableRes iconRes: Int? = null,
-    icon: ImageVector? = null,
+    icon: ImageVector,
     iconTint: Color = Color.White,
     title: String,
     description: String,
@@ -477,26 +368,15 @@ private fun DonationOptionCard(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        when {
-                            iconRes != null -> {
-                                Image(
-                                    painter = painterResource(iconRes),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                            icon != null -> {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = iconTint,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                        }
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
                 }
-                
+
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -513,7 +393,7 @@ private fun DonationOptionCard(
                         color = Color.White.copy(alpha = 0.9f)
                     )
                 }
-                
+
                 Icon(
                     imageVector = Icons.Outlined.ArrowForward,
                     contentDescription = null,

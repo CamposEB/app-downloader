@@ -38,6 +38,6 @@ develocity {
     }
 }
 
-rootProject.name = "DestinyDownloader"
+rootProject.name = "Destiny"
 include (":app")
 include(":color")

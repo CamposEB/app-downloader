@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,63 +27,62 @@ import com.junkfood.seal.ui.theme.SealTheme
 import kotlinx.coroutines.delay
 
 /**
- * Modern Professional Splash Screen for Seal Plus
- * 
- * Features:
- * - Smooth spring animations for logo entrance
- * - Sequential text fade-in animations  
- * - Pulsing glow effect in Gradient Dark mode
- * - Theme-aware colors and gradients
- * - Professional branding with "PLUS" badge
- * - Bottom copyright and powered by text
- * 
- * Timing:
- * - Logo appears at 200ms with bounce effect
- * - App name fades in at 600ms
- * - Tagline appears at 900ms
- * - Total display time: ~2.4 seconds
+ * Tela de abertura do Destiny
+ *
+ * Recursos:
+ * - Animação suave de entrada do logo
+ * - Textos que aparecem em sequência
+ * - Brilho pulsante no modo Gradient Dark
+ * - Cores e gradientes de acordo com o tema
+ * - Rodapé com os créditos do desenvolvedor
+ *
+ * Tempos (mais rápidos que a versão original):
+ * - Logo aparece aos 100 ms
+ * - Nome do app aos 350 ms
+ * - Slogan aos 550 ms
+ * - Tempo total na tela: cerca de 1,2 segundo
  */
 @Composable
 fun SplashScreen(
     onSplashFinished: () -> Unit
 ) {
     val isGradientDark = LocalGradientDarkMode.current
-    
-    // Animation states
+
+    // Estados das animações
     var logoVisible by remember { mutableStateOf(false) }
     var textVisible by remember { mutableStateOf(false) }
     var taglineVisible by remember { mutableStateOf(false) }
-    
-    // Logo scale and alpha animations
+
+    // Escala e transparência do logo
     val logoScale by animateFloatAsState(
         targetValue = if (logoVisible) 1f else 0.5f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            stiffness = Spring.StiffnessMediumLow
         ),
         label = "logoScale"
     )
-    
+
     val logoAlpha by animateFloatAsState(
         targetValue = if (logoVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
         label = "logoAlpha"
     )
-    
-    // Text slide and fade animations
+
+    // Entrada dos textos
     val textAlpha by animateFloatAsState(
         targetValue = if (textVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 400, easing = LinearOutSlowInEasing),
         label = "textAlpha"
     )
-    
+
     val taglineAlpha by animateFloatAsState(
         targetValue = if (taglineVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 400, easing = LinearOutSlowInEasing),
         label = "taglineAlpha"
     )
-    
-    // Pulsing glow effect for logo
+
+    // Brilho pulsante do logo
     val infiniteTransition = rememberInfiniteTransition(label = "glow")
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
@@ -93,20 +93,20 @@ fun SplashScreen(
         ),
         label = "glowAlpha"
     )
-    
-    // Trigger animations sequentially
+
+    // Dispara as animações em sequência
     LaunchedEffect(Unit) {
-        delay(200) // Initial delay
+        delay(100) // Atraso inicial
         logoVisible = true
-        delay(400)
+        delay(250)
         textVisible = true
-        delay(300)
+        delay(200)
         taglineVisible = true
-        delay(1500) // Hold on screen
+        delay(650) // Tempo parado na tela
         onSplashFinished()
     }
-    
-    // Background
+
+    // Fundo
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -133,14 +133,14 @@ fun SplashScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 32.dp)
+            modifier = Modifier.padding(horizontal = 24.dp)
         ) {
-            // Logo with glow effect
+            // Logo com efeito de brilho
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(180.dp)
             ) {
-                // Glow effect (only in Gradient Dark mode)
+                // Brilho (somente no modo Gradient Dark)
                 if (isGradientDark && logoVisible) {
                     Box(
                         modifier = Modifier
@@ -157,40 +157,43 @@ fun SplashScreen(
                             )
                     )
                 }
-                
-                // Main Logo
+
+                // Logo principal
                 Image(
                     painter = painterResource(id = R.drawable.splash_logo),
-                    contentDescription = "Seal Plus Logo",
+                    contentDescription = "Logo do Destiny",
                     modifier = Modifier
                         .size(160.dp)
                         .scale(logoScale)
                         .alpha(logoAlpha)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
-            // App Name with gradient (if Gradient Dark mode)
+
+            // Nome do app (uma linha só, para não quebrar no meio da palavra)
             Text(
                 text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.displaySmall.copy(
+                style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.5.sp
                 ),
                 color = if (isGradientDark) {
                     Color.White
                 } else {
                     MaterialTheme.colorScheme.onBackground
                 },
+                maxLines = 1,
+                softWrap = false,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.alpha(textAlpha)
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
-            // Tagline
+
+            // Slogan
             Text(
-                text = "Advanced Video Downloader",
+                text = "Downloader de vídeo e áudio",
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 0.5.sp
@@ -200,13 +203,14 @@ fun SplashScreen(
                 } else {
                     MaterialTheme.colorScheme.primary
                 },
+                textAlign = TextAlign.Center,
                 modifier = Modifier.alpha(taglineAlpha)
             )
-            
+
             Spacer(modifier = Modifier.height(48.dp))
         }
-        
-        // Bottom branding
+
+        // Rodapé
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -215,7 +219,7 @@ fun SplashScreen(
                 .alpha(taglineAlpha)
         ) {
             Text(
-                text = "Powered by Mahesh Technicals",
+                text = "Desenvolvido por Campos",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isGradientDark) {
                     GradientDarkColors.OnSurface.copy(alpha = 0.6f)
@@ -223,11 +227,11 @@ fun SplashScreen(
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 }
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             Text(
-                text = "© 2026 Seal Plus",
+                text = "© 2026 Destiny",
                 style = MaterialTheme.typography.labelSmall,
                 color = if (isGradientDark) {
                     GradientDarkColors.OnSurface.copy(alpha = 0.4f)
@@ -240,9 +244,9 @@ fun SplashScreen(
 }
 
 /**
- * Preview for Light Theme
+ * Pré-visualização no tema claro
  */
-@Preview(name = "Light Theme", showBackground = true)
+@Preview(name = "Tema claro", showBackground = true)
 @Composable
 private fun SplashScreenLightPreview() {
     SealTheme(darkTheme = false) {
@@ -251,9 +255,9 @@ private fun SplashScreenLightPreview() {
 }
 
 /**
- * Preview for Dark Theme
+ * Pré-visualização no tema escuro
  */
-@Preview(name = "Dark Theme", showBackground = true)
+@Preview(name = "Tema escuro", showBackground = true)
 @Composable
 private fun SplashScreenDarkPreview() {
     SealTheme(darkTheme = true) {

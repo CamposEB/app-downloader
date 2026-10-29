@@ -70,9 +70,9 @@ fun TroubleShootingPage(
                         modifier = Modifier,
                         text = stringResource(R.string.issue_tracker_hint),
                     )
-                    val knownIssueUrlSeal = "https://github.com/MaheshTechnicals/Sealplus/issues"
+                    val knownIssueUrlSeal = "https://wa.me/5521993267426?text=Ol%C3%A1!%20Encontrei%20um%20bug%20no%20app%20Destiny%20e%20gostaria%20de%20reportar."
                     PreferenceItem(
-                        title = "Seal Issue Tracker",
+                        title = "Relatar um problema do Destiny",
                         description = null,
                         icon = Icons.AutoMirrored.Outlined.OpenInNew,
                         onClick = { uriHandler.openUri(knownIssueUrlSeal) },
@@ -80,7 +80,7 @@ fun TroubleShootingPage(
 
                     val knownIssueUrlYtdlp = "https://github.com/yt-dlp/yt-dlp/issues/3766"
                     PreferenceItem(
-                        title = "yt-dlp Issue Tracker",
+                        title = "Problemas conhecidos do yt-dlp",
                         description = null,
                         icon = Icons.AutoMirrored.Outlined.OpenInNew,
                         onClick = { uriHandler.openUri(knownIssueUrlYtdlp) },
@@ -123,10 +123,10 @@ fun TroubleShootingPage(
                     onClick = {
                         scope.launch(Dispatchers.IO) {
                             runCatching {
-                                    isUpdating = true
-                                    UpdateUtil.updateYtDlp()
-                                    ytdlpVersion = YT_DLP_VERSION.getString()
-                                }
+                                isUpdating = true
+                                UpdateUtil.updateYtDlp()
+                                ytdlpVersion = YT_DLP_VERSION.getString()
+                            }
                                 .onFailure { th ->
                                     th.printStackTrace()
                                     withContext(Dispatchers.Main) {
@@ -139,7 +139,7 @@ fun TroubleShootingPage(
                                     withContext(Dispatchers.Main) {
                                         context.makeToast(
                                             context.getString(R.string.yt_dlp_up_to_date) +
-                                                " (${YT_DLP_VERSION.getString()})"
+                                                    " (${YT_DLP_VERSION.getString()})"
                                         )
                                     }
                                 }

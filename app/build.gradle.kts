@@ -45,10 +45,13 @@ android {
         applicationId = "com.camposeb.downloader"
         minSdk = 24
         targetSdk = 37
-        versionCode = 301_000_400
+        // 1.0.0-beta.1 = 1 * 100_000_000 + 0 * 1_000_000 + 0 * 10_000 + 1 * 10 + 200 (beta)
+        versionCode = 100_000_210
         check(versionCode == currentVersionCode)
 
-        versionName = baseVersionName
+        // Alterado para o nome de exibição da versão
+        versionName = "1.0.7"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
@@ -88,7 +91,8 @@ android {
                     output.versionCode.set(baseAbiCode + (output.versionCode.get() ?: 0))
                 }
 
-                output.outputFileName.set("DestinyDownloader-${baseVersionName}-${name ?: "universal"}.apk")
+                // Nome fixo do APK gerado
+                output.outputFileName.set("Destiny.apk")
             }
         }
     }
@@ -109,8 +113,7 @@ android {
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("githubPublish")
             }
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
+            // applicationIdSuffix = ".debug" e versionNameSuffix = "-debug" foram removidos
         }
     }
 

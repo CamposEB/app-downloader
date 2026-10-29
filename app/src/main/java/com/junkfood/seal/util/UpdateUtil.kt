@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit
 
 object UpdateUtil {
 
-    private const val OWNER = "MaheshTechnicals"
-    private const val REPO = "Sealplus"
+    private const val OWNER = "CamposEB"
+    private const val REPO = "app-downloader"
     private const val ARM64 = "arm64-v8a"
     private const val ARM32 = "armeabi-v7a"
     private const val X86 = "x86"
@@ -177,7 +177,7 @@ object UpdateUtil {
                 }?.browserDownloadUrl
                     ?: release.assets?.find { asset ->
                         asset.name?.contains("universal", ignoreCase = true) == true ||
-                            asset.name?.endsWith(".apk", ignoreCase = true) == true
+                                asset.name?.endsWith(".apk", ignoreCase = true) == true
                     }?.browserDownloadUrl
                     ?: return@withContext emptyFlow()
             val request = Request.Builder().url(targetUrl).build()
@@ -193,54 +193,54 @@ object UpdateUtil {
 
     private fun ResponseBody.downloadFileWithProgress(saveFile: File): Flow<DownloadStatus> =
         flow {
-                emit(DownloadStatus.Progress(0))
+            emit(DownloadStatus.Progress(0))
 
-                var deleteFile = true
+            var deleteFile = true
 
-                try {
-                    byteStream().use { inputStream ->
-                        saveFile.outputStream().use { outputStream ->
-                            val totalBytes = contentLength()
-                            val data = ByteArray(8_192)
-                            var progressBytes = 0L
+            try {
+                byteStream().use { inputStream ->
+                    saveFile.outputStream().use { outputStream ->
+                        val totalBytes = contentLength()
+                        val data = ByteArray(8_192)
+                        var progressBytes = 0L
 
-                            while (true) {
-                                val bytes = inputStream.read(data)
+                        while (true) {
+                            val bytes = inputStream.read(data)
 
-                                if (bytes == -1) {
-                                    break
-                                }
-
-                                outputStream.write(data, 0, bytes)
-                                progressBytes += bytes
-                                if (totalBytes > 0L) {
-                                    emit(
-                                        DownloadStatus.Progress(
-                                            percent = ((progressBytes * 100) / totalBytes).toInt()
-                                        )
-                                    )
-                                } else {
-                                    emit(DownloadStatus.Progress(percent = -1))
-                                }
+                            if (bytes == -1) {
+                                break
                             }
 
-                            when {
-                                totalBytes > 0L && progressBytes < totalBytes ->
-                                    throw Exception("missing bytes")
-                                totalBytes > 0L && progressBytes > totalBytes ->
-                                    throw Exception("too many bytes")
-                                else -> deleteFile = false
+                            outputStream.write(data, 0, bytes)
+                            progressBytes += bytes
+                            if (totalBytes > 0L) {
+                                emit(
+                                    DownloadStatus.Progress(
+                                        percent = ((progressBytes * 100) / totalBytes).toInt()
+                                    )
+                                )
+                            } else {
+                                emit(DownloadStatus.Progress(percent = -1))
                             }
                         }
-                    }
 
-                    emit(DownloadStatus.Finished(saveFile))
-                } finally {
-                    if (deleteFile) {
-                        saveFile.delete()
+                        when {
+                            totalBytes > 0L && progressBytes < totalBytes ->
+                                throw Exception("missing bytes")
+                            totalBytes > 0L && progressBytes > totalBytes ->
+                                throw Exception("too many bytes")
+                            else -> deleteFile = false
+                        }
                     }
                 }
+
+                emit(DownloadStatus.Finished(saveFile))
+            } finally {
+                if (deleteFile) {
+                    saveFile.delete()
+                }
             }
+        }
             .flowOn(Dispatchers.IO)
             .distinctUntilChanged()
 

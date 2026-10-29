@@ -55,7 +55,7 @@ fun LockScreen(
                 biometricShown = true
                 AuthenticationManager.showBiometricPrompt(
                     activity = context,
-                    title = context.getString(R.string.unlock_seal_plus),
+                    title = context.getString(R.string.unlock_destiny),
                     subtitle = context.getString(R.string.biometric_prompt_subtitle),
                     description = context.getString(R.string.biometric_prompt_description),
                     allowDeviceCredential = false,
@@ -152,7 +152,7 @@ fun LockScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Text(
-                    text = stringResource(R.string.seal_plus),
+                    text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -231,7 +231,7 @@ fun LockScreen(
                         {
                             AuthenticationManager.showBiometricPrompt(
                                 activity = context,
-                                title = context.getString(R.string.unlock_seal_plus),
+                                title = context.getString(R.string.unlock_destiny),
                                 subtitle = context.getString(R.string.biometric_prompt_subtitle),
                                 allowDeviceCredential = false,
                                 onSuccess = {

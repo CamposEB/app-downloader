@@ -107,9 +107,12 @@ fun AppEntry(dialogViewModel: DownloadDialogViewModel) {
         }
     }
 
-    if (sheetState is DownloadDialogViewModel.SheetState.Configure) {
-        if (navController.currentDestination?.route != Route.HOME) {
-            navController.popBackStack(route = Route.HOME, inclusive = false, saveState = true)
+    // CORREÇÃO DO BUG: Adicionado LaunchedEffect para só rodar quando o sheetState mudar
+    LaunchedEffect(sheetState) {
+        if (sheetState is DownloadDialogViewModel.SheetState.Configure) {
+            if (navController.currentDestination?.route != Route.HOME) {
+                navController.popBackStack(route = Route.HOME, inclusive = false, saveState = true)
+            }
         }
     }
 
@@ -133,6 +136,8 @@ fun AppEntry(dialogViewModel: DownloadDialogViewModel) {
             onDismissRequest = { drawerState.close() },
             onNavigateToRoute = {
                 if (currentRoute != it) {
+                    // Limpa o estado do download ao navegar para evitar bloqueios
+                    dialogViewModel.postAction(DownloadDialogViewModel.Action.Reset)
                     navController.navigate(it) {
                         launchSingleTop = true
                         popUpTo(route = Route.HOME)
@@ -324,8 +329,6 @@ fun NavGraphBuilder.settingsGraph(
         animatedComposable(Route.DONATE) {
             SupportDeveloperPage(
                 onNavigateBack = onNavigateBack,
-                onNavigateToSponsors = { onNavigateTo(Route.SPONSORS) },
-                onNavigateToCrypto = { onNavigateTo(Route.CRYPTO_DONATION) }
             )
         }
         animatedComposable(Route.SPONSORS) { SponsorsPage(onNavigateBack = onNavigateBack) }

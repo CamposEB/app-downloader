@@ -10,17 +10,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material.icons.outlined.UpdateDisabled
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material3.AlertDialog
@@ -31,7 +29,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -49,9 +46,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.UrlAnnotation
@@ -61,23 +56,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.junkfood.seal.App
 import com.junkfood.seal.App.Companion.packageInfo
 import com.junkfood.seal.R
 import com.junkfood.seal.ui.component.BackButton
 import com.junkfood.seal.ui.component.ConfirmButton
-import com.junkfood.seal.util.AUTO_UPDATE
-import com.junkfood.seal.util.PreferenceUtil
 
-private const val releaseURL = "https://github.com/MaheshTechnicals/Sealplus/releases"
-private const val repoUrl = "https://github.com/MaheshTechnicals/Sealplus/blob/main/README.md"
 const val weblate = "https://hosted.weblate.org/engage/seal/"
 const val YtdlpRepository = "https://github.com/yt-dlp/yt-dlp"
-private const val githubIssueUrl = "https://github.com/MaheshTechnicals/Sealplus/issues"
-private const val telegramChannelUrl = "https://t.me/maheshtechnicals"
-private const val youtubeChannelUrl = "https://youtube.com/@maheshtechnicals"
-private const val githubSponsor = "https://github.com/sponsors/JunkFood02"
+private const val whatsappChannelUrl =
+    "https://whatsapp.com/channel/0029Vb9Q40EKmCPPNj4peT2w"
+private const val portfolioUrl = "https://portfolio.rafaelcamposcontato7.workers.dev/"
 private const val TAG = "AboutPage"
+
+// Edite esta lista com as novidades de cada versão do seu app.
+private val whatsNewItems =
+    listOf(
+        "Interface totalmente em português",
+        "App mais leve e mais rápido",
+        "Novo nome e novo ícone: Destiny",
+        "Nova tela de apoio ao desenvolvedor",
+    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,12 +92,20 @@ fun AboutPage(
             canScroll = { true },
         )
     val context = LocalContext.current
-    var isAutoUpdateEnabled by remember { mutableStateOf(PreferenceUtil.isAutoUpdateEnabled()) }
+    var showWhatsNew by remember { mutableStateOf(false) }
 
     val uriHandler = LocalUriHandler.current
     fun openUrl(url: String) {
         uriHandler.openUri(url)
     }
+
+    if (showWhatsNew) {
+        WhatsNewDialog(
+            versionName = packageInfo.versionName ?: "",
+            onDismissRequest = { showWhatsNew = false },
+        )
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -117,52 +123,12 @@ fun AboutPage(
             ) {
                 item {
                     Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.auto_update),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = stringResource(R.string.check_for_updates_desc),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color =
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.8f
-                                        ),
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Switch(
-                                checked = isAutoUpdateEnabled,
-                                onCheckedChange = {
-                                    isAutoUpdateEnabled = !isAutoUpdateEnabled
-                                    PreferenceUtil.updateValue(AUTO_UPDATE, isAutoUpdateEnabled)
-                                },
-                                enabled = !App.isFDroidBuild(),
-                            )
-                        }
-                    }
-                }
-
-                item {
-                    Card(
                         onClick = onNavigateToOnboarding,
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -170,14 +136,14 @@ fun AboutPage(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "View Onboarding",
+                                    text = "Ver introdução",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "See the introduction screens again",
+                                    text = "Veja novamente as telas de apresentação do app",
                                     style = MaterialTheme.typography.bodySmall,
                                     color =
                                         MaterialTheme.colorScheme.onSurfaceVariant.copy(
@@ -201,24 +167,12 @@ fun AboutPage(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             CommunityCard(
-                                title = stringResource(R.string.readme),
-                                description = stringResource(R.string.readme_desc),
-                                icon = Icons.Outlined.Description,
-                                onClick = { openUrl(repoUrl) },
-                                modifier = Modifier.weight(1f),
-                            )
-                            CommunityCard(
                                 title = stringResource(R.string.release),
-                                description = stringResource(R.string.release_desc),
+                                description = "Veja as novidades desta versão",
                                 icon = Icons.Outlined.NewReleases,
-                                onClick = { openUrl(releaseURL) },
+                                onClick = { showWhatsNew = true },
                                 modifier = Modifier.weight(1f),
                             )
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
                             CommunityCard(
                                 title = stringResource(R.string.sponsor),
                                 description = stringResource(R.string.sponsor_desc),
@@ -226,30 +180,23 @@ fun AboutPage(
                                 onClick = onNavigateToDonatePage,
                                 modifier = Modifier.weight(1f),
                             )
-                            CommunityCard(
-                                title = stringResource(R.string.telegram_channel),
-                                description = telegramChannelUrl,
-                                icon = painterResource(id = R.drawable.icons8_telegram_app),
-                                onClick = { openUrl(telegramChannelUrl) },
-                                modifier = Modifier.weight(1f),
-                            )
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             CommunityCard(
-                                title = stringResource(R.string.youtube_channel),
-                                description = youtubeChannelUrl,
-                                icon = painterResource(id = R.drawable.icons8_youtube),
-                                onClick = { openUrl(youtubeChannelUrl) },
+                                title = "Canal no WhatsApp",
+                                description = "Novidades e avisos do app",
+                                icon = Icons.AutoMirrored.Outlined.Chat,
+                                onClick = { openUrl(whatsappChannelUrl) },
                                 modifier = Modifier.weight(1f),
                             )
                             CommunityCard(
                                 title = stringResource(R.string.website),
-                                description = "sealplus.in",
+                                description = "Conheça meu portfólio",
                                 icon = Icons.Outlined.Public,
-                                onClick = { openUrl("https://sealplus.in/") },
+                                onClick = { openUrl(portfolioUrl) },
                                 modifier = Modifier.weight(1f),
                             )
                         }
@@ -272,11 +219,42 @@ fun AboutPage(
                 item {
                     Text(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                        text = "Version ${packageInfo.versionName ?: ""}  \u2022  ${context.packageName}",
+                        text =
+                            "Versão ${packageInfo.versionName ?: ""}  \u2022  ${context.packageName}",
                         style = MaterialTheme.typography.bodySmall,
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun WhatsNewDialog(versionName: String, onDismissRequest: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            ConfirmButton(stringResource(id = R.string.got_it)) { onDismissRequest() }
+        },
+        icon = {
+            Icon(
+                Icons.Outlined.NewReleases,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        },
+        title = {
+            Text(text = "Novidades da versão $versionName", textAlign = TextAlign.Center)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                whatsNewItems.forEach { item ->
+                    Text(
+                        text = "\u2022  $item",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -296,13 +274,10 @@ private fun CommunityCard(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        colors =
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             when (icon) {
                 is ImageVector -> {
                     Icon(
@@ -332,8 +307,7 @@ private fun CommunityCard(
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color =
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
             )
         }
     }
@@ -353,7 +327,7 @@ fun AutoUpdateUnavailableDialog(onDismissRequest: () -> Unit = {}) {
         val startIndex = text.indexOf(hyperLinkText)
         val endIndex = startIndex + hyperLinkText.length
         addUrlAnnotation(
-            UrlAnnotation("https://github.com/MaheshTechnicals/Sealplus/releases/latest"),
+            UrlAnnotation("https://github.com/CamposEB/app-downloader/releases/latest"),
             start = startIndex,
             end = endIndex,
         )
@@ -371,7 +345,9 @@ fun AutoUpdateUnavailableDialog(onDismissRequest: () -> Unit = {}) {
         confirmButton = {
             ConfirmButton(stringResource(id = R.string.got_it)) { onDismissRequest() }
         },
-        icon = { Icon(Icons.Outlined.UpdateDisabled, null, tint = MaterialTheme.colorScheme.primary) },
+        icon = {
+            Icon(Icons.Outlined.UpdateDisabled, null, tint = MaterialTheme.colorScheme.primary)
+        },
         title = {
             Text(
                 text = stringResource(id = R.string.feature_unavailable),
