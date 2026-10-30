@@ -12,6 +12,7 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.IBinder
 import androidx.core.content.getSystemService
 import coil3.ImageLoader
@@ -158,9 +159,21 @@ class App : Application(), SingletonImageLoader.Factory {
             }
         }
 
-        videoDownloadDir = VIDEO_DIRECTORY.getString(getExternalDownloadDirectory().absolutePath)
+        videoDownloadDir =
+            VIDEO_DIRECTORY.getString(
+                File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
+                    "Destiny",
+                ).apply { mkdirs() }.absolutePath
+            )
 
-        audioDownloadDir = AUDIO_DIRECTORY.getString(File(videoDownloadDir, "Audio").absolutePath)
+        audioDownloadDir =
+            AUDIO_DIRECTORY.getString(
+                File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
+                    "Destiny",
+                ).apply { mkdirs() }.absolutePath
+            )
         if (!PreferenceUtil.containsKey(COMMAND_DIRECTORY)) {
             COMMAND_DIRECTORY.updateString(videoDownloadDir)
         }

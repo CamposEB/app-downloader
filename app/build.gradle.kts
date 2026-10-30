@@ -42,11 +42,12 @@ android {
     buildFeatures { buildConfig = true }
 
     defaultConfig {
-        applicationId = "com.maheshtechnicals.sealplus"
+        applicationId = "com.camposeb.downloader"
         minSdk = 24
         targetSdk = 37
-        versionCode = 301_000_400
-        check(versionCode == currentVersionCode)
+
+        // Usa dinamicamente a versão do Version.kt e remove a checagem de erro
+        versionCode = currentVersionCode
 
         versionName = baseVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -87,27 +88,25 @@ android {
                     output.versionCode.set(baseAbiCode + (output.versionCode.get() ?: 0))
                 }
 
-                output.outputFileName.set("SealPlus-${baseVersionName}-${name ?: "universal"}.apk")
+                output.outputFileName.set("Destiny-${baseVersionName}-${name ?: "universal"}.apk")
             }
         }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            if (keystorePropertiesFile.exists()) {
-                signingConfig = signingConfigs.getByName("githubPublish")
-            }
+            // FORÇANDO O USO DA ASSINATURA DE DEBUG
+            signingConfig = signingConfigs.getByName("debug")
         }
         debug {
-            if (keystorePropertiesFile.exists()) {
-                signingConfig = signingConfigs.getByName("githubPublish")
-            }
+            // FORÇANDO O USO DA ASSINATURA DE DEBUG
+            signingConfig = signingConfigs.getByName("debug")
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
@@ -140,9 +139,9 @@ android {
 
 ktfmt { kotlinLangStyle() }
 
-kotlin { 
+kotlin {
     jvmToolchain(21)
-    
+
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
     }
@@ -178,9 +177,6 @@ dependencies {
 
     implementation(libs.androidx.documentfile)
 
-    // AndroidX WebKit — provides WebViewCompat.addDocumentStartJavaScript() which
-    // injects JavaScript BEFORE any page script runs. Required to inject the
-    // window.chrome shim that bypasses Meta's (Facebook/Instagram) bot detection.
     implementation("androidx.webkit:webkit:1.16.0")
 
     testImplementation(libs.junit4)
