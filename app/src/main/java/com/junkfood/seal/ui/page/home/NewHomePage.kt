@@ -87,6 +87,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -219,6 +220,17 @@ fun NewHomePage(
     var showExitDialog by remember { mutableStateOf(false) }
     var urlText by remember { mutableStateOf("") }
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    var clipboardUrl by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        clipboardManager.getText()?.text?.let { text ->
+            val clean = text.trim()
+            val regex = Regex("""^(https?://)?(www\.)?(youtube\.com|youtu\.?be|instagram\.com|tiktok\.com|twitter\.com|x\.com|dailymotion\.com)/.+""", RegexOption.IGNORE_CASE)
+            if (regex.containsMatchIn(clean) || regex.matches(clean)) {
+                clipboardUrl = clean
+            }
+        }
+    }
 
     // Pre-fill URL from share intent and auto-open the download dialog.
     // The original code only filled the text field without opening the dialog, causing the
@@ -402,9 +414,9 @@ fun NewHomePage(
     // Get recent 5 downloads (remove duplicates by video URL and path to prevent duplicate cards)
     val recentFiveDownloads = remember(recentDownloads) {
         recentDownloads
+            .sortedByDescending { it.id }
             .distinctBy { it.videoUrl + it.videoPath } // Use both URL and path to ensure uniqueness
-            .takeLast(5)
-            .reversed()
+            .take(5)
     }
     
     // Get active downloads with proper state observation for real-time updates.
@@ -780,7 +792,7 @@ fun NewHomePage(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Seal+ Branding with animated glowing "+"
+            // Destiny Branding with animated glowing "+"
             item {
                 Box(
                     modifier = Modifier
@@ -790,12 +802,55 @@ fun NewHomePage(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Seal",
+                            text = "Destiny",
                             style = MaterialTheme.typography.displayMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         AnimatedGlowingPlus()
+                    }
+                }
+            }
+
+            clipboardUrl?.let { url ->
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Link detectado na área de transferência:",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = url,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(onClick = { clipboardUrl = null }) {
+                                    Text("Ignorar")
+                                }
+                                Button(onClick = {
+                                    urlText = url
+                                    clipboardUrl = null
+                                    view.slightHapticFeedback()
+                                    dialogViewModel.startDownload(listOf(url))
+                                }) {
+                                    Text("Baixar")
+                                }
+                            }
+                        }
                     }
                 }
             }

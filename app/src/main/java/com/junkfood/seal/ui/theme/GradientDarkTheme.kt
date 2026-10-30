@@ -27,20 +27,20 @@ import androidx.compose.ui.unit.dp
  */
 object GradientDarkColors {
     // Deep Charcoal and Obsidian Backgrounds
-    val Background = Color(0xFF0A0A0F)
-    val Surface = Color(0xFF14141F)
-    val SurfaceVariant = Color(0xFF1A1A2E)
-    val SurfaceContainer = Color(0xFF1E1E2F)
-    val SurfaceContainerLow = Color(0xFF16162A)
-    val SurfaceContainerHigh = Color(0xFF25253A)
+    val Background = Color(0xFF121212)
+    val Surface = Color(0xFF1E1E1E)
+    val SurfaceVariant = Color(0xFF2A2A2A)
+    val SurfaceContainer = Color(0xFF242424)
+    val SurfaceContainerLow = Color(0xFF1A1A1A)
+    val SurfaceContainerHigh = Color(0xFF2C2C2C)
     
-    // Vibrant Gradient Colors - Deep Blues and Purples
-    val GradientPrimaryStart = Color(0xFF5B47E5)
-    val GradientPrimaryEnd = Color(0xFF8B5CF6)
-    val GradientSecondaryStart = Color(0xFF3B82F6)
-    val GradientSecondaryEnd = Color(0xFF6366F1)
-    val GradientAccentStart = Color(0xFFA855F7)
-    val GradientAccentEnd = Color(0xFFEC4899)
+    // Vibrant Gradient Colors - Modern Blue Identity
+    val GradientPrimaryStart = Color(0xFF1E88E5)
+    val GradientPrimaryEnd = Color(0xFF42A5F5)
+    val GradientSecondaryStart = Color(0xFF1976D2)
+    val GradientSecondaryEnd = Color(0xFF2196F3)
+    val GradientAccentStart = Color(0xFF00ACC1)
+    val GradientAccentEnd = Color(0xFF26C6DA)
     
     // Glassmorphism Colors
     val GlassWhiteBorder = Color(0x1AFFFFFF)

@@ -667,7 +667,7 @@ fun DeveloperMessageSection(
                 verticalAlignment = Alignment.Top
             ) {
                 AsyncImageImpl(
-                    model = gitHubAvatar("MaheshTechnicals"),
+                    model = gitHubAvatar("CamposEB"),
                     contentDescription = null,
                     modifier = Modifier
                         .size(72.dp)
@@ -716,7 +716,7 @@ fun DeveloperMessageSection(
             ) {
                 Button(
                     onClick = {
-                        uriHandler.openUri("https://github.com/sponsors/MaheshTechnicals")
+                        uriHandler.openUri("https://github.com/sponsors/CamposEB")
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
@@ -740,7 +740,7 @@ fun DeveloperMessageSection(
                 
                 FilledTonalButton(
                     onClick = {
-                        uriHandler.openUri("https://github.com/MaheshTechnicals/Sealplus")
+                        uriHandler.openUri("https://github.com/CamposEB/app-downloader")
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),

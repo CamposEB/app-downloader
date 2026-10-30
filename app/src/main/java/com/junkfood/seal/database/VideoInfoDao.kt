@@ -24,7 +24,7 @@ interface VideoInfoDao {
     @Query("select * from DownloadedVideoInfo")
     fun getDownloadHistoryFlow(): Flow<List<DownloadedVideoInfo>>
 
-    @Query("select * from DownloadedVideoInfo where isHidden = 0")
+    @Query("select * from DownloadedVideoInfo where isHidden = 0 order by id desc")
     fun getVisibleDownloadHistoryFlow(): Flow<List<DownloadedVideoInfo>>
 
     @Query("select * from DownloadedVideoInfo where isHidden = 1")

@@ -1,15 +1,15 @@
 package com.junkfood.seal.ui.page.settings.about
 
 import android.content.ClipData
-import android.content.Intent
-import android.net.Uri
+import android.content.ClipboardManager
+import android.content.Context
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.annotation.DrawableRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -36,6 +35,10 @@ import com.junkfood.seal.ui.theme.GradientBrushes
 import com.junkfood.seal.util.makeToast
 
 private const val TAG = "SupportDeveloperPage"
+private const val PIX_KEY = "b6b3d5bd-0c6c-4b08-b928-845ab7e90252"
+private const val WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb9Q40EKmCPPNj4peT2w"
+private const val PORTFOLIO_URL = "https://portfolio.rafaelcamposcontato7.workers.dev/"
+private const val GITHUB_REPO = "https://github.com/CamposEB/app-downloader"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +49,6 @@ fun SupportDeveloperPage(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val clipboardManager = LocalClipboardManager.current
     val isDarkTheme = LocalDarkTheme.current.isDarkTheme()
     val isGradientDark = LocalGradientDarkMode.current
 
@@ -123,7 +125,7 @@ fun SupportDeveloperPage(
                                 MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "Support the Development",
+                            text = "Apoie o Desenvolvimento",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
@@ -133,7 +135,7 @@ fun SupportDeveloperPage(
                                 MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "Your support helps keep Seal Plus free and actively maintained",
+                            text = "Seu apoio ajuda a manter o aplicativo gratuito e constantemente atualizado",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             color = if (isDarkTheme && isGradientDark) 
@@ -161,7 +163,7 @@ fun SupportDeveloperPage(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "About the Developer",
+                            text = "Sobre o Desenvolvedor",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -185,12 +187,12 @@ fun SupportDeveloperPage(
                             )
                             Column {
                                 Text(
-                                    text = "Developer",
+                                    text = "Desenvolvedor",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                                 Text(
-                                    text = "Mahesh Varma",
+                                    text = "Campos",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -204,7 +206,7 @@ fun SupportDeveloperPage(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
-                                    uriHandler.openUri("https://github.com/MaheshTechnicals")
+                                    uriHandler.openUri(GITHUB_REPO)
                                 }
                                 .padding(12.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -223,7 +225,7 @@ fun SupportDeveloperPage(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                                 Text(
-                                    text = "@MaheshTechnicals",
+                                    text = "CamposEB/app-downloader",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.primary
@@ -240,113 +242,74 @@ fun SupportDeveloperPage(
                 }
             }
             
-            // Donation Options Section
+            // Support Options Section
             item {
                 Text(
-                    text = "Support Options",
+                    text = "Opções de Apoio",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
             
-            // UPI Payment
+            // PIX Payment
             item {
                 DonationOptionCard(
-                    iconRes = R.drawable.google_pay,
-                    title = "UPI Payment",
-                    description = "MaheshTechnicals@idbi",
+                    icon = Icons.Outlined.ContentCopy,
+                    title = "Chave PIX",
+                    description = PIX_KEY,
                     gradient = if (isDarkTheme && isGradientDark) {
                         GradientBrushes.Primary
                     } else {
                         Brush.linearGradient(
                             colors = listOf(
-                                Color(0xFF6366F1),
-                                Color(0xFF8B5CF6)
+                                Color(0xFF00BDAE),
+                                Color(0xFF00897B)
                             )
                         )
                     },
                     onClick = {
-                        openUpiPayment(
-                            context = context,
-                            upiId = "MaheshTechnicals@idbi",
-                            name = "Mahesh Technicals",
-                            note = "Support Seal Plus Development"
-                        )
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("Chave PIX", PIX_KEY)
+                        clipboard.setPrimaryClip(clip)
+                        context.makeToast("Chave PIX copiada!")
                     }
                 )
             }
             
-            // PayPal
+            // WhatsApp Channel
             item {
                 DonationOptionCard(
-                    iconRes = R.drawable.paypal,
-                    title = "PayPal",
-                    description = "Support via PayPal",
+                    icon = Icons.Outlined.Chat,
+                    title = "Canal de Atualizações",
+                    description = "Acompanhe novidades no WhatsApp",
                     gradient = Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF0070BA),
-                            Color(0xFF1546A0)
+                            Color(0xFF25D366),
+                            Color(0xFF128C7E)
                         )
                     ),
                     onClick = {
-                        uriHandler.openUri("https://www.paypal.com/paypalme/Varma161")
+                        uriHandler.openUri(WHATSAPP_CHANNEL)
                     }
                 )
             }
-            
-            // GitHub Sponsors
+
+            // Portfolio
             item {
                 DonationOptionCard(
-                    iconRes = R.drawable.github,
-                    title = "GitHub Sponsors",
-                    description = "Support via GitHub Sponsors",
+                    icon = Icons.Outlined.Language,
+                    title = "Portfólio",
+                    description = "Conheça meus outros projetos",
                     gradient = Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF4078C0),
-                            Color(0xFF333333)
+                            Color(0xFF6366F1),
+                            Color(0xFF8B5CF6)
                         )
                     ),
                     onClick = {
-                        uriHandler.openUri("https://github.com/sponsors/MaheshTechnicals")
+                        uriHandler.openUri(PORTFOLIO_URL)
                     }
-                )
-            }
-            
-            // Crypto Currency
-            item {
-                DonationOptionCard(
-                    iconRes = R.drawable.bitcoin,
-                    title = "Crypto Currency",
-                    description = "Support via USDT (BEP20)",
-                    gradient = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFFF7931A),
-                            Color(0xFFF9B24D)
-                        )
-                    ),
-                    onClick = { onNavigateToCrypto() }
-                )
-            }
-            
-            // Our Sponsors
-            item {
-                DonationOptionCard(
-                    icon = Icons.Outlined.Group,
-                    iconTint = Color.Black,
-                    title = "Our Sponsors",
-                    description = "View our amazing supporters",
-                    gradient = if (isDarkTheme && isGradientDark) {
-                        GradientBrushes.Accent
-                    } else {
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFFEC4899),
-                                Color(0xFFF97316)
-                            )
-                        )
-                    },
-                    onClick = { onNavigateToSponsors() }
                 )
             }
             
@@ -373,7 +336,7 @@ fun SupportDeveloperPage(
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
-                            text = "All donations help maintain and improve Seal Plus. Thank you for your support! 💙",
+                            text = "Obrigado por utilizar o aplicativo e apoiar o trabalho! 💙",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f)
@@ -387,55 +350,6 @@ fun SupportDeveloperPage(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-    }
-}
-
-/**
- * Opens UPI payment intent with pre-filled UPI ID
- * Shows all available UPI apps (Google Pay, PhonePe, Paytm, BHIM, etc.)
- * 
- * @param context Android context
- * @param upiId UPI ID of the payee
- * @param name Name of the payee
- * @param note Transaction note/description
- */
-private fun openUpiPayment(
-    context: android.content.Context,
-    upiId: String,
-    name: String,
-    note: String = ""
-) {
-    try {
-        // Build UPI payment URI
-        // Format: upi://pay?pa=UPI_ID&pn=NAME&tn=NOTE&cu=CURRENCY
-        val uri = Uri.parse("upi://pay").buildUpon()
-            .appendQueryParameter("pa", upiId)  // Payee address (UPI ID)
-            .appendQueryParameter("pn", name)    // Payee name
-            .appendQueryParameter("tn", note)    // Transaction note
-            .appendQueryParameter("cu", "INR")   // Currency
-            .build()
-        
-        // Create intent to handle UPI payment
-        val intent = Intent(Intent.ACTION_VIEW, uri)
-        
-        // Show chooser with all available UPI apps
-        val chooser = Intent.createChooser(intent, "Pay with")
-        context.startActivity(chooser)
-        
-    } catch (e: android.content.ActivityNotFoundException) {
-        // No UPI app found - copy to clipboard as fallback
-        val clipboardManager = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) 
-            as android.content.ClipboardManager
-        val clip = android.content.ClipData.newPlainText("UPI ID", upiId)
-        clipboardManager.setPrimaryClip(clip)
-        context.makeToast("No UPI apps found. UPI ID copied to clipboard")
-    } catch (e: Exception) {
-        // Other error - copy to clipboard as fallback
-        val clipboardManager = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) 
-            as android.content.ClipboardManager
-        val clip = android.content.ClipData.newPlainText("UPI ID", upiId)
-        clipboardManager.setPrimaryClip(clip)
-        context.makeToast("Error opening UPI app. UPI ID copied to clipboard")
     }
 }
 
@@ -470,7 +384,7 @@ private fun DonationOptionCard(
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color.White,
+                    color = Color.White.copy(alpha = 0.2f),
                     modifier = Modifier.size(56.dp)
                 ) {
                     Box(

@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit
 
 object UpdateUtil {
 
-    private const val OWNER = "MaheshTechnicals"
-    private const val REPO = "Sealplus"
+    private const val OWNER = "CamposEB"
+    private const val REPO = "app-downloader"
     private const val ARM64 = "arm64-v8a"
     private const val ARM32 = "armeabi-v7a"
     private const val X86 = "x86"
@@ -88,8 +88,8 @@ object UpdateUtil {
             val releaseList = jsonFormat.decodeFromString<List<Release>>(body.string())
             val stable = UPDATE_CHANNEL.getInt() == STABLE
             releaseList
-                .filter { if (stable) it.name.toVersion() is Version.Stable else true }
-                .maxByOrNull { it.name.toVersion() } ?: throw Exception("No valid release found")
+                .filter { if (stable) it.tagName?.toVersion() is Version.Stable else true }
+                .maxByOrNull { it.tagName?.toVersion() ?: EMPTY_VERSION } ?: throw Exception("No valid release found")
         }
 
     suspend fun checkForUpdate(context: Context = App.context): Release? =
@@ -97,7 +97,7 @@ object UpdateUtil {
             runCatching {
                 val currentVersion = context.getCurrentVersion()
                 val latestRelease = getLatestRelease()
-                val latestVersion = latestRelease.name.toVersion()
+                val latestVersion = latestRelease.tagName?.toVersion() ?: EMPTY_VERSION
                 if (currentVersion < latestVersion) latestRelease else null
             }.getOrNull()
         }

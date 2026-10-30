@@ -215,7 +215,7 @@ fun SplashScreen(
                 .alpha(taglineAlpha)
         ) {
             Text(
-                text = "Powered by Mahesh Technicals",
+                text = "Powered by Campos",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isGradientDark) {
                     GradientDarkColors.OnSurface.copy(alpha = 0.6f)

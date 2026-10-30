@@ -42,9 +42,9 @@ object NotificationUtil {
     private lateinit var serviceNotification: Notification
 
     //    private var builder =
-    //        NotificationCompat.Builder(context, CHANNEL_ID).setSmallIcon(R.drawable.ic_stat_seal)
+    //        NotificationCompat.Builder(context, CHANNEL_ID).setSmallIcon(R.mipmap.ic_launcher)
     private val commandNotificationBuilder =
-        NotificationCompat.Builder(context, CHANNEL_ID).setSmallIcon(R.drawable.ic_stat_seal)
+        NotificationCompat.Builder(context, CHANNEL_ID).setSmallIcon(R.mipmap.ic_launcher)
 
     private fun applySmartNotificationSettings(
         builder: NotificationCompat.Builder,
@@ -162,22 +162,23 @@ object NotificationUtil {
 
     fun notifyProgress(
         title: String,
-        notificationId: Int = DEFAULT_NOTIFICATION_ID,
+        notificationId: Int = SERVICE_NOTIFICATION_ID,
         progress: Int = PROGRESS_INITIAL,
         taskId: String? = null,
         text: String? = null,
     ) {
+        val fixedId = SERVICE_NOTIFICATION_ID
         if (!NOTIFICATION.getBoolean()) return
         val pendingIntent =
             taskId?.let {
                 Intent(context.applicationContext, NotificationActionReceiver::class.java)
                     .putExtra(TASK_ID_KEY, taskId)
-                    .putExtra(NOTIFICATION_ID_KEY, notificationId)
+                    .putExtra(NOTIFICATION_ID_KEY, fixedId)
                     .putExtra(ACTION_KEY, ACTION_CANCEL_TASK)
                     .run {
                         PendingIntent.getBroadcast(
                             context.applicationContext,
-                            notificationId,
+                            fixedId,
                             this,
                             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE,
                         )
@@ -200,8 +201,9 @@ object NotificationUtil {
             ?.takeIf { it.isNotEmpty() }
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_seal)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
+            .setContentText(displayText)
             .setProgress(PROGRESS_MAX, progress, isIndeterminate)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -214,7 +216,7 @@ object NotificationUtil {
         // Apply smart notification settings for progress notifications
         applySmartNotificationSettings(builder, isProgress = true)
         
-        notificationManager.notify(notificationId, builder.build())
+        notificationManager.notify(fixedId, builder.build())
     }
 
     fun updateNotification(
@@ -226,7 +228,7 @@ object NotificationUtil {
 
         val builder =
             NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_seal)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentText(text)
                 .setOngoing(false)
                 .setAutoCancel(true)
@@ -247,7 +249,7 @@ object NotificationUtil {
 
         val builder =
             NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_seal)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentText(text)
                 .setOngoing(false)
                 .setAutoCancel(true)
@@ -265,7 +267,7 @@ object NotificationUtil {
         //        notificationManager.cancel(notificationId)
         val builder =
             NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_seal)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentText(text)
                 .setProgress(0, 0, false)
                 .setAutoCancel(true)
@@ -279,8 +281,8 @@ object NotificationUtil {
 
     fun makeServiceNotification(intent: PendingIntent, text: String? = null): Notification {
         serviceNotification =
-            NotificationCompat.Builder(context, SERVICE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_seal)
+            NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(context.getString(R.string.service_title))
                 .setContentText(text)
                 .setOngoing(true)
@@ -327,7 +329,7 @@ object NotificationUtil {
                     PendingIntent.FLAG_UPDATE_CURRENT,
             )
         NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_seal)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(context.getString(textId))
             .setOngoing(false)
@@ -367,7 +369,7 @@ object NotificationUtil {
             )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_seal)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(
                 "[${templateName}_${taskUrl}] " +
                     context.getString(R.string.execute_command_notification)
