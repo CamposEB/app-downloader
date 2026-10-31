@@ -32,11 +32,11 @@ import com.junkfood.seal.ui.theme.GradientBrushes
 import com.junkfood.seal.ui.theme.GradientDarkColors
 import com.junkfood.seal.util.makeToast
 
-private const val BEP20_ADDRESS = "0x8c857c0FaDc6B3d58678Af5F5A28905a75Cc0c16"
-private const val TRUST_WALLET_URL =
-    "https://link.trustwallet.com/send?coin=20000714&address=0x8c857c0FaDc6B3d58678Af5F5A28905a75Cc0c16&token_id=0x55d398326f99059fF775485246999027B3197955"
+// Alterado de BEP20 para a sua chave PIX
+private const val PIX_KEY = "b6b3d5bd-0c6c-4b08-b928-845ab7e90252"
+// QR Code gerado a partir da chave PIX
 private const val QR_CODE_API_URL =
-    "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https%3A%2F%2Flink.trustwallet.com%2Fsend%3Fcoin%3D20000714%26address%3D0x8c857c0FaDc6B3d58678Af5F5A28905a75Cc0c16%26token_id%3D0x55d398326f99059fF775485246999027B3197955"
+    "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=b6b3d5bd-0c6c-4b08-b928-845ab7e90252"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +59,7 @@ fun CryptoDonationPage(
             TopAppBar(
                 title = {
                     Text(
-                        "Crypto Donation",
+                        "Doação via PIX",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -68,7 +68,7 @@ fun CryptoDonationPage(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Voltar"
                         )
                     }
                 },
@@ -87,7 +87,7 @@ fun CryptoDonationPage(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Header with gradient
+            // Header com gradiente verde
             item {
                 Box(
                     modifier = Modifier
@@ -99,8 +99,8 @@ fun CryptoDonationPage(
                             } else {
                                 Brush.linearGradient(
                                     colors = listOf(
-                                        Color(0xFFF7931A),
-                                        Color(0xFFF9B24D)
+                                        Color(0xFF00B060), // Verde PIX
+                                        Color(0xFF32D583)  // Verde claro
                                     )
                                 )
                             }
@@ -122,7 +122,7 @@ fun CryptoDonationPage(
                                 MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "Crypto Currency Donation",
+                            text = "Doação Rápida e Segura",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
@@ -132,7 +132,7 @@ fun CryptoDonationPage(
                                 MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "Support Seal Plus development with USDT (BEP20) tokens",
+                            text = "Ajude a manter o Destiny gratuito e em constante desenvolvimento via PIX.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             color = if (isDarkTheme && isGradientDark)
@@ -144,7 +144,7 @@ fun CryptoDonationPage(
                 }
             }
 
-            // Warning Notice
+            // Aviso
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -168,14 +168,14 @@ fun CryptoDonationPage(
                             imageVector = Icons.Outlined.Warning,
                             contentDescription = null,
                             tint = if (isDarkTheme && isGradientDark) {
-                                Color(0xFFF7931A)
+                                Color(0xFF00B060)
                             } else {
                                 MaterialTheme.colorScheme.error
                             },
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
-                            text = "Please ensure you send tokens only on the supported network specified below. Sending via the wrong network will result in permanent loss of funds.",
+                            text = "O PIX é instantâneo e não pode ser estornado. Verifique os dados do destinatário antes de confirmar a transferência.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (isDarkTheme && isGradientDark) {
                                 GradientDarkColors.OnSurface
@@ -188,7 +188,7 @@ fun CryptoDonationPage(
                 }
             }
 
-            // Network & Address Info Card
+            // Informações da Chave
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -207,9 +207,9 @@ fun CryptoDonationPage(
                             .padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Network
+                        // Método
                         Text(
-                            text = "Supported Network",
+                            text = "Método de Doação",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = if (isDarkTheme && isGradientDark) {
@@ -235,7 +235,7 @@ fun CryptoDonationPage(
                             )
                             Column {
                                 Text(
-                                    text = "BNB Smart Chain (BEP20)",
+                                    text = "PIX",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = if (isDarkTheme && isGradientDark) {
@@ -245,7 +245,7 @@ fun CryptoDonationPage(
                                     }
                                 )
                                 Text(
-                                    text = "Token: USDT",
+                                    text = "Chave Aleatória",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isDarkTheme && isGradientDark) {
                                         GradientDarkColors.OnSurface.copy(alpha = 0.7f)
@@ -260,9 +260,9 @@ fun CryptoDonationPage(
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         )
 
-                        // Wallet Address
+                        // Chave PIX
                         Text(
-                            text = "Wallet Address",
+                            text = "Chave PIX (Copiar e Colar)",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = if (isDarkTheme && isGradientDark) {
@@ -282,7 +282,7 @@ fun CryptoDonationPage(
                             }
                         ) {
                             Text(
-                                text = BEP20_ADDRESS,
+                                text = PIX_KEY,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (isDarkTheme && isGradientDark) {
                                     GradientDarkColors.GradientCyan
@@ -295,11 +295,11 @@ fun CryptoDonationPage(
                             )
                         }
 
-                        // Copy Address Button
+                        // Botão de Copiar
                         Button(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(BEP20_ADDRESS))
-                                context.makeToast("BEP20 Address copied!")
+                                clipboardManager.setText(AnnotatedString(PIX_KEY))
+                                context.makeToast("Chave PIX copiada com sucesso!")
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -342,53 +342,10 @@ fun CryptoDonationPage(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Text(
-                                        text = "Copy Address",
+                                        text = "Copiar Chave PIX",
                                         style = MaterialTheme.typography.labelLarge
                                     )
                                 }
-                            }
-                        }
-
-                        // Pay via Trust Wallet Button
-                        OutlinedButton(
-                            onClick = {
-                                runCatching {
-                                    uriHandler.openUri(TRUST_WALLET_URL)
-                                }.onFailure {
-                                    runCatching {
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(TRUST_WALLET_URL)).apply {
-                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        }
-                                        context.startActivity(intent)
-                                    }.onFailure {
-                                        context.makeToast("Could not open Trust Wallet link")
-                                    }
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.AccountBalanceWallet,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = "Pay via Trust Wallet",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Icon(
-                                    imageVector = Icons.Outlined.OpenInNew,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
                             }
                         }
                     }
@@ -416,7 +373,7 @@ fun CryptoDonationPage(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "Scan QR Code",
+                            text = "Escanear QR Code",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = if (isDarkTheme && isGradientDark) {
@@ -441,14 +398,14 @@ fun CryptoDonationPage(
                             ) {
                                 AsyncImageImpl(
                                     model = QR_CODE_API_URL,
-                                    contentDescription = "Crypto Donation QR Code",
+                                    contentDescription = "QR Code PIX",
                                     modifier = Modifier.fillMaxSize()
                                 )
                             }
                         }
 
                         Text(
-                            text = "Scan with Trust Wallet or any crypto wallet app to auto-fill USDT (BEP20) donation details",
+                            text = "Abra o aplicativo do seu banco e escaneie o QR Code para preencher os dados da doação automaticamente.",
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Center,
                             color = if (isDarkTheme && isGradientDark) {
@@ -461,7 +418,7 @@ fun CryptoDonationPage(
                 }
             }
 
-            // Additional Info Card
+            // Notas Importantes
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -496,7 +453,7 @@ fun CryptoDonationPage(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = "Important Notes",
+                                text = "Notas Importantes",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (isDarkTheme && isGradientDark) {
@@ -506,7 +463,7 @@ fun CryptoDonationPage(
                                 }
                             )
                             Text(
-                                text = "• Only send USDT tokens on BNB Smart Chain (BEP20)\n• Do not send tokens via ERC20, TRC20, or other networks\n• Minimum recommended amount: \$5 USD\n• All donations are non-refundable",
+                                text = "• Envie qualquer valor via PIX\n• Sua contribuição é voluntária\n• Todas as doações são usadas para manter o projeto ativo\n• Não é possível solicitar reembolso",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (isDarkTheme && isGradientDark) {
                                     GradientDarkColors.OnSurface.copy(alpha = 0.7f)
@@ -519,7 +476,7 @@ fun CryptoDonationPage(
                 }
             }
 
-            // Bottom spacing
+            // Espaçamento final
             item {
                 Spacer(modifier = Modifier.height(16.dp))
             }

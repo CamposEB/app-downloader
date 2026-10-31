@@ -20,7 +20,6 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material.icons.outlined.UpdateDisabled
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material3.AlertDialog
@@ -33,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -49,7 +49,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -86,7 +85,7 @@ fun AboutPage(
     onNavigateToCreditsPage: () -> Unit,
     onNavigateToUpdatePage: () -> Unit,
     onNavigateToDonatePage: () -> Unit,
-    onNavigateToOnboarding: () -> Unit = {},
+    onNavigateToOnboarding: () -> Unit = {}, // Mantido para não quebrar a navegação externa, mas não usado
 ) {
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
@@ -95,11 +94,13 @@ fun AboutPage(
         )
     val context = LocalContext.current
     var isAutoUpdateEnabled by remember { mutableStateOf(PreferenceUtil.isAutoUpdateEnabled()) }
+    var showChangelog by remember { mutableStateOf(false) }
 
     val uriHandler = LocalUriHandler.current
     fun openUrl(url: String) {
         uriHandler.openUri(url)
     }
+
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -157,64 +158,29 @@ fun AboutPage(
                 }
 
                 item {
-                    Card(
-                        onClick = onNavigateToOnboarding,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "View Onboarding",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "See the introduction screens again",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color =
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.8f
-                                        ),
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-
-                item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Linha 1: Novidades (Substitui o README) e Release
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             CommunityCard(
-                                title = stringResource(R.string.readme),
-                                description = stringResource(R.string.readme_desc),
-                                icon = Icons.Outlined.Description,
-                                onClick = { openUrl(repoUrl) },
+                                title = "Novidades na 1.0.7",
+                                description = "Veja o que mudou nesta atualização",
+                                icon = Icons.Outlined.NewReleases,
+                                onClick = { showChangelog = true },
                                 modifier = Modifier.weight(1f),
                             )
                             CommunityCard(
                                 title = stringResource(R.string.release),
                                 description = stringResource(R.string.release_desc),
-                                icon = Icons.Outlined.NewReleases,
+                                icon = Icons.Outlined.Description,
                                 onClick = { openUrl(releaseURL) },
                                 modifier = Modifier.weight(1f),
                             )
                         }
+
+                        // Linha 2: Sponsor e WhatsApp
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -228,35 +194,25 @@ fun AboutPage(
                             )
                             CommunityCard(
                                 title = "Canal WhatsApp",
-                                description = telegramChannelUrl,
+                                description = "Atualizações diretas no seu celular",
                                 icon = Icons.Outlined.Public,
                                 onClick = { openUrl(telegramChannelUrl) },
                                 modifier = Modifier.weight(1f),
                             )
                         }
+
+                        // Linha 3: Portfólio e Créditos
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             CommunityCard(
                                 title = "Portfólio",
-                                description = youtubeChannelUrl,
+                                description = "portfolio.rafaelcamposcontato7.workers.dev",
                                 icon = Icons.Outlined.Public,
                                 onClick = { openUrl(youtubeChannelUrl) },
                                 modifier = Modifier.weight(1f),
                             )
-                            CommunityCard(
-                                title = "Website",
-                                description = "portfolio.rafaelcamposcontato7.workers.dev",
-                                icon = Icons.Outlined.Public,
-                                onClick = { openUrl("https://portfolio.rafaelcamposcontato7.workers.dev/") },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
                             CommunityCard(
                                 title = stringResource(R.string.credits),
                                 description = stringResource(R.string.credits_desc),
@@ -264,7 +220,6 @@ fun AboutPage(
                                 onClick = onNavigateToCreditsPage,
                                 modifier = Modifier.weight(1f),
                             )
-                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -282,6 +237,41 @@ fun AboutPage(
             }
         },
     )
+
+    // Dialog de Novidades
+    if (showChangelog) {
+        AlertDialog(
+            onDismissRequest = { showChangelog = false },
+            title = {
+                Text(
+                    text = "Novidades da versão 1.0.7",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("• Notificação unificada (apenas uma barra de progresso com velocidade e tamanho).")
+                    Text("• Detecção automática de links copiados (estilo SnapTube).")
+                    Text("• Melhorias na aba de Downloads e Recentes.")
+                    Text("• Nova identidade visual e splash screen.")
+                    Text("• Correção crítica do motor de download (yt-dlp) no Android 14.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Atenção: Recomendamos desinstalar a versão anterior antes de instalar esta.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showChangelog = false }) {
+                    Text("Entendido")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -327,6 +317,7 @@ private fun CommunityCard(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -334,6 +325,7 @@ private fun CommunityCard(
                 style = MaterialTheme.typography.bodySmall,
                 color =
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                maxLines = 2,
             )
         }
     }

@@ -26,16 +26,16 @@ import com.junkfood.seal.ui.theme.SealTheme
 import kotlinx.coroutines.delay
 
 /**
- * Modern Professional Splash Screen for Seal Plus
- * 
+ * Modern Professional Splash Screen for Destiny
+ *
  * Features:
  * - Smooth spring animations for logo entrance
- * - Sequential text fade-in animations  
+ * - Sequential text fade-in animations
  * - Pulsing glow effect in Gradient Dark mode
  * - Theme-aware colors and gradients
- * - Professional branding with "PLUS" badge
+ * - Professional branding
  * - Bottom copyright and powered by text
- * 
+ *
  * Timing:
  * - Logo appears at 200ms with bounce effect
  * - App name fades in at 600ms
@@ -47,12 +47,12 @@ fun SplashScreen(
     onSplashFinished: () -> Unit
 ) {
     val isGradientDark = LocalGradientDarkMode.current
-    
+
     // Animation states
     var logoVisible by remember { mutableStateOf(false) }
     var textVisible by remember { mutableStateOf(false) }
     var taglineVisible by remember { mutableStateOf(false) }
-    
+
     // Logo scale and alpha animations
     val logoScale by animateFloatAsState(
         targetValue = if (logoVisible) 1f else 0.5f,
@@ -62,26 +62,26 @@ fun SplashScreen(
         ),
         label = "logoScale"
     )
-    
+
     val logoAlpha by animateFloatAsState(
         targetValue = if (logoVisible) 1f else 0f,
         animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
         label = "logoAlpha"
     )
-    
+
     // Text slide and fade animations
     val textAlpha by animateFloatAsState(
         targetValue = if (textVisible) 1f else 0f,
         animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
         label = "textAlpha"
     )
-    
+
     val taglineAlpha by animateFloatAsState(
         targetValue = if (taglineVisible) 1f else 0f,
         animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
         label = "taglineAlpha"
     )
-    
+
     // Pulsing glow effect for logo
     val infiniteTransition = rememberInfiniteTransition(label = "glow")
     val glowAlpha by infiniteTransition.animateFloat(
@@ -93,7 +93,7 @@ fun SplashScreen(
         ),
         label = "glowAlpha"
     )
-    
+
     // Trigger animations sequentially
     LaunchedEffect(Unit) {
         delay(200) // Initial delay
@@ -105,7 +105,7 @@ fun SplashScreen(
         delay(1500) // Hold on screen
         onSplashFinished()
     }
-    
+
     // Background
     Box(
         modifier = Modifier
@@ -157,20 +157,20 @@ fun SplashScreen(
                             )
                     )
                 }
-                
-                // Main Logo
+
+                // Main Logo (Alterado para o ícone do app)
                 Image(
-                    painter = painterResource(id = R.drawable.splash_logo),
-                    contentDescription = "Seal Plus Logo",
+                    painter = painterResource(id = R.drawable.logo_destiny),
+                    contentDescription = "Destiny Logo",
                     modifier = Modifier
                         .size(160.dp)
                         .scale(logoScale)
                         .alpha(logoAlpha)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             // App Name with gradient (if Gradient Dark mode)
             Text(
                 text = stringResource(R.string.app_name),
@@ -185,12 +185,12 @@ fun SplashScreen(
                 },
                 modifier = Modifier.alpha(textAlpha)
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
-            // Tagline
+
+            // Tagline (Alterado para Português)
             Text(
-                text = "Advanced Video Downloader",
+                text = "Baixador de Vídeos e Áudios",
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 0.5.sp
@@ -202,10 +202,10 @@ fun SplashScreen(
                 },
                 modifier = Modifier.alpha(taglineAlpha)
             )
-            
+
             Spacer(modifier = Modifier.height(48.dp))
         }
-        
+
         // Bottom branding
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -223,11 +223,11 @@ fun SplashScreen(
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 }
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             Text(
-                text = "© 2026 Seal Plus",
+                text = "© 2026 Destiny",
                 style = MaterialTheme.typography.labelSmall,
                 color = if (isGradientDark) {
                     GradientDarkColors.OnSurface.copy(alpha = 0.4f)

@@ -126,51 +126,15 @@ fun GitHubSponsorsPage(onNavigateBack: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     val isDarkTheme = LocalDarkTheme.current.isDarkTheme()
     val isGradientDark = LocalGradientDarkMode.current
-    val sponsorList = remember { mutableStateListOf<SponsorShip>() }
-    val backerList = remember { mutableStateListOf<SponsorShip>() }
-    val supporterList = remember { mutableStateListOf<SponsorShip>() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var viewingSponsorShip by remember {
-        mutableStateOf(SponsorShip(sponsorEntity = SponsorEntity("login")))
-    }
-    var showSheet by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val onSponsorClick: (SponsorShip) -> Unit = {
-        viewingSponsorShip = it
-        showSheet = true
-        scope.launch {
-            delay(80)
-            sheetState.show()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            SHOW_SPONSOR_MSG.updateInt(0)
-            SponsorUtil.getSponsors()
-                .onFailure { Log.e(TAG, "SponsorPage: ", it) }
-                .onSuccess { response ->
-                    val items = response.sponsors.map { sp ->
-                        SponsorShip(
-                            sponsorEntity = SponsorEntity(
-                                login = sp.id.toString(),
-                                name = sp.name,
-                            )
-                        )
-                    }
-                    withContext(Dispatchers.Main) {
-                        sponsorList.addAll(items)
-                    }
-                }
-        }
-    }
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Text(modifier = Modifier, text = stringResource(id = R.string.sponsors))
+                    Text(modifier = Modifier, text = "Apoie o Projeto") // ALTERADO
                 },
                 navigationIcon = { BackButton { onNavigateBack() } },
                 scrollBehavior = scrollBehavior,
@@ -188,73 +152,20 @@ fun GitHubSponsorsPage(onNavigateBack: () -> Unit) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     HeroHeader(isDarkTheme = isDarkTheme, isGradientDark = isGradientDark)
                 }
-                
-                // About Seal Plus Section
+
+                // About Destiny Section
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    AboutSealPlusSection()
+                    AboutDestinySection()
                 }
-                
+
                 // Features Grid
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     FeaturesSection()
                 }
-                
+
                 // Why Sponsor Section
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     WhySponsorSection(isDarkTheme = isDarkTheme, isGradientDark = isGradientDark)
-                }
-                if (supporterList.isNotEmpty()) {
-                    item(span = { GridItemSpan(maxLineSpan) }, key = SUPPORTERS) {
-                        PreferenceSubtitle(
-                            text = SUPPORTERS,
-                            contentPadding =
-                                PaddingValues(start = 12.dp, top = 24.dp, bottom = 12.dp),
-                        )
-                    }
-
-                    items(
-                        span = { GridItemSpan(maxLineSpan / 3) },
-                        items = supporterList,
-                        key = { it.sponsorEntity.login },
-                    ) { sponsorShip ->
-                        SponsorItem(sponsorShip = sponsorShip) { onSponsorClick(sponsorShip) }
-                    }
-                }
-
-                if (backerList.isNotEmpty()) {
-                    item(span = { GridItemSpan(maxLineSpan) }, key = BACKERS) {
-                        PreferenceSubtitle(
-                            text = BACKERS,
-                            contentPadding =
-                                PaddingValues(start = 12.dp, top = 12.dp, bottom = 12.dp),
-                        )
-                    }
-
-                    items(
-                        items = backerList,
-                        span = { GridItemSpan(maxLineSpan / 3) },
-                        key = { it.sponsorEntity.login },
-                    ) { sponsorShip ->
-                        SponsorItem(sponsorShip = sponsorShip) { onSponsorClick(sponsorShip) }
-                    }
-                }
-
-                if (sponsorList.isNotEmpty()) {
-                    item(span = { GridItemSpan(maxLineSpan) }, key = SPONSORS) {
-                        PreferenceSubtitle(
-                            text = SPONSORS,
-                            contentPadding =
-                                PaddingValues(start = 12.dp, top = 12.dp, bottom = 12.dp),
-                        )
-                    }
-
-                    items(
-                        items = sponsorList,
-                        span = { GridItemSpan(maxLineSpan / 4) },
-                        key = { it.sponsorEntity.login },
-                    ) { sponsorShip ->
-                        SponsorItem(sponsorShip = sponsorShip) { onSponsorClick(sponsorShip) }
-                    }
                 }
 
                 // Developer Message and Sponsor Button
@@ -264,11 +175,6 @@ fun GitHubSponsorsPage(onNavigateBack: () -> Unit) {
                         isDarkTheme = isDarkTheme,
                         isGradientDark = isGradientDark
                     )
-                }
-            }
-            if (showSheet) {
-                SponsorDialog(sponsorShip = viewingSponsorShip, sheetState = sheetState) {
-                    scope.launch { sheetState.hide(); showSheet = false }
                 }
             }
         },
@@ -307,28 +213,28 @@ fun HeroHeader(isDarkTheme: Boolean, isGradientDark: Boolean) {
                 imageVector = Icons.Outlined.Favorite,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
-                tint = if (isDarkTheme && isGradientDark) 
-                    Color.White 
-                else 
+                tint = if (isDarkTheme && isGradientDark)
+                    Color.White
+                else
                     MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Support Seal Plus",
+                text = "Apoie o Destiny", // ALTERADO
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                color = if (isDarkTheme && isGradientDark) 
-                    Color.White 
-                else 
+                color = if (isDarkTheme && isGradientDark)
+                    Color.White
+                else
                     MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Help keep this project free, open-source, and actively maintained",
+                text = "Ajude a manter este projeto gratuito e em constante evolução", // ALTERADO
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
-                color = if (isDarkTheme && isGradientDark) 
-                    Color.White.copy(alpha = 0.9f) 
-                else 
+                color = if (isDarkTheme && isGradientDark)
+                    Color.White.copy(alpha = 0.9f)
+                else
                     MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
             )
         }
@@ -336,7 +242,7 @@ fun HeroHeader(isDarkTheme: Boolean, isGradientDark: Boolean) {
 }
 
 @Composable
-fun AboutSealPlusSection() {
+fun AboutDestinySection() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -363,34 +269,34 @@ fun AboutSealPlusSection() {
                     modifier = Modifier.size(28.dp)
                 )
                 Text(
-                    text = "About Seal Plus",
+                    text = "Sobre o Destiny", // ALTERADO
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-            
+
             Text(
-                text = "Seal Plus is the enhanced premium edition of the popular Seal video downloader. Built with modern Android architecture and featuring an exclusive gradient dark theme, it's your ultimate companion for downloading videos and audio from 1000+ platforms.",
+                text = "O Destiny é um poderoso baixador de vídeos e áudios, focado em performance, interface moderna e privacidade. Desenvolvido com arquitetura Android moderna, é seu companheiro definitivo para baixar conteúdo de milhares de plataformas.", // ALTERADO
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 24.sp
             )
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(label = "Downloads", value = "100K+")
-                StatItem(label = "Platforms", value = "1000+")
-                StatItem(label = "Rating", value = "★ 4.8")
+                StatItem(label = "Downloads", value = "Ilimitados")
+                StatItem(label = "Plataformas", value = "1000+")
+                StatItem(label = "Custo", value = "Grátis")
             }
         }
     }
@@ -425,12 +331,12 @@ fun FeaturesSection() {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "What Your Support Enables",
+            text = "O que o seu apoio permite", // ALTERADO
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         )
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -438,31 +344,31 @@ fun FeaturesSection() {
             FeatureCard(
                 icon = Icons.Outlined.Speed,
                 title = "Performance",
-                description = "Optimized downloads with aria2c",
+                description = "Downloads otimizados",
                 modifier = Modifier.weight(1f)
             )
             FeatureCard(
                 icon = Icons.Outlined.Palette,
-                title = "Premium UI",
-                description = "Exclusive gradient themes",
+                title = "Design Premium",
+                description = "Temas exclusivos",
                 modifier = Modifier.weight(1f)
             )
         }
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             FeatureCard(
                 icon = Icons.Outlined.CloudDownload,
-                title = "Auto Updates",
-                description = "Latest features instantly",
+                title = "Atualizações",
+                description = "Novidades rápidas",
                 modifier = Modifier.weight(1f)
             )
             FeatureCard(
                 icon = Icons.Outlined.Security,
-                title = "Security",
-                description = "Biometric app lock",
+                title = "Segurança",
+                description = "Bloqueio por Biometria",
                 modifier = Modifier.weight(1f)
             )
         }
@@ -532,40 +438,40 @@ fun WhySponsorSection(isDarkTheme: Boolean, isGradientDark: Boolean) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Why Sponsor?",
+                text = "Por que apoiar?", // ALTERADO
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
             )
-            
+
             BenefitItem(
                 emoji = "🚀",
-                title = "Faster Development",
-                description = "Your support allows me to dedicate more time to developing new features and improvements"
+                title = "Desenvolvimento Rápido",
+                description = "Seu apoio permite dedicar mais tempo ao desenvolvimento de novos recursos"
             )
-            
+
             BenefitItem(
                 emoji = "🐛",
-                title = "Quick Bug Fixes",
-                description = "Priority support and faster resolution of issues reported by the community"
+                title = "Correção Rápida de Bugs",
+                description = "Suporte prioritário e resolução mais ágil de problemas relatados"
             )
-            
+
             BenefitItem(
                 emoji = "🎨",
-                title = "Better UX",
-                description = "Resources to design and implement more polished user interfaces and experiences"
+                title = "Melhor Experiência",
+                description = "Recursos para criar interfaces e experiências mais polidas"
             )
-            
+
             BenefitItem(
                 emoji = "🔒",
-                title = "Always Free",
-                description = "Your sponsorship ensures Seal Plus remains free and open-source for everyone"
+                title = "Sempre Gratuito",
+                description = "Seu apoio garante que o Destiny continue gratuito e open-source para todos"
             )
-            
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -586,7 +492,7 @@ fun WhySponsorSection(isDarkTheme: Boolean, isGradientDark: Boolean) {
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "💙 Every contribution, big or small, makes a real difference and is deeply appreciated!",
+                    text = "💙 Toda contribuição, grande ou pequena, faz a diferença e é muito bem-vinda!",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = if (isDarkTheme && isGradientDark)
@@ -637,6 +543,9 @@ fun DeveloperMessageSection(
     isDarkTheme: Boolean,
     isGradientDark: Boolean
 ) {
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -654,13 +563,13 @@ fun DeveloperMessageSection(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text(
-                text = "Message from Developer",
+                text = "Mensagem do Desenvolvedor",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -688,35 +597,37 @@ fun DeveloperMessageSection(
                         ),
                     contentScale = ContentScale.Crop
                 )
-                
+
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Conversation(
                         modifier = Modifier,
-                        text = stringResource(id = R.string.sponsor_msg)
+                        text = "Olá! Sou o Campos, desenvolvedor do Destiny. Obrigado por usar o app!"
                     )
                     Conversation(
                         modifier = Modifier,
-                        text = stringResource(R.string.sponsor_msg2)
+                        text = "Se o app te ajudou, considere apoiar o projeto via PIX. Muito obrigado!"
                     )
                 }
             }
-            
+
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-            
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Botão PIX
                 Button(
                     onClick = {
-                        uriHandler.openUri("https://github.com/sponsors/CamposEB")
+                        clipboardManager.setText(AnnotatedString("b6b3d5bd-0c6c-4b08-b928-845ab7e90252"))
+                        context.makeToast("Chave PIX copiada!")
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
@@ -732,33 +643,41 @@ fun DeveloperMessageSection(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Become a Sponsor",
+                        text = "Copiar Chave PIX",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                
+
+                // Botão WhatsApp
                 FilledTonalButton(
                     onClick = {
-                        uriHandler.openUri("https://github.com/CamposEB/app-downloader")
+                        uriHandler.openUri("https://whatsapp.com/channel/0029Vb9Q40EKmCPPNj4peT2w")
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
                     Text(
-                        text = "⭐ Star on GitHub",
+                        text = "Canal de Atualizações",
                         style = MaterialTheme.typography.titleSmall
                     )
                 }
-                
-                Text(
-                    text = "Even starring the repo helps spread the word! 🌟",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+
+                // Botão Portfólio
+                FilledTonalButton(
+                    onClick = {
+                        uriHandler.openUri("https://portfolio.rafaelcamposcontato7.workers.dev/")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(vertical = 12.dp)
+                ) {
+                    Text(
+                        text = "Portfólio",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                }
             }
         }
     }

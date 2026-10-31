@@ -102,102 +102,102 @@ fun NavigationDrawer(
     var hiddenContentAuthDone by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-    when (windowWidth) {
-        WindowWidthSizeClass.Compact,
-        WindowWidthSizeClass.Medium -> {
-            ModalNavigationDrawer(
-                gesturesEnabled = gesturesEnabled,
-                drawerState = drawerState,
-                drawerContent = {
-                    ModalDrawerSheet(drawerState = drawerState, modifier = modifier.width(360.dp)) {
-                        NavigationDrawerSheetContent(
-                            modifier = Modifier,
-                            currentRoute = currentRoute,
-                            showQuickSettings = showQuickSettings,
-                            onNavigateToRoute = onNavigateToRoute,
-                            onDismissRequest = onDismissRequest,
-                            onShowHiddenContentAuth = {
-                                hiddenContentAuthDone = false
-                                showHiddenContentAuthScreen = true
-                            },
-                        )
-                    }
-                },
-                content = content,
-            )
-        }
-        WindowWidthSizeClass.Expanded -> {
-            ModalNavigationDrawer(
-                gesturesEnabled = drawerState.isOpen,
-                drawerState = drawerState,
-                drawerContent = {
-                    ModalDrawerSheet(drawerState = drawerState, modifier = modifier.width(360.dp)) {
-                        NavigationDrawerSheetContent(
-                            modifier = Modifier,
-                            currentRoute = currentRoute,
-                            showQuickSettings = showQuickSettings,
-                            onNavigateToRoute = onNavigateToRoute,
-                            onDismissRequest = onDismissRequest,
-                            onShowHiddenContentAuth = {
-                                hiddenContentAuthDone = false
-                                showHiddenContentAuthScreen = true
-                            },
-                        )
-                    }
-                },
-            ) {
-                Row {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.zIndex(1f),
-                    ) {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxHeight().systemBarsPadding().width(92.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Spacer(Modifier.height(8.dp))
-                            IconButton(
-                                onClick = { scope.launch { drawerState.open() } },
-                                modifier = Modifier.align(Alignment.CenterHorizontally),
-                            ) {
-                                Icon(Icons.Outlined.Menu, null, tint = ThemedIconColors.primary)
-                            }
-                            Spacer(Modifier.weight(1f))
-                            NavigationRailContent(
+        when (windowWidth) {
+            WindowWidthSizeClass.Compact,
+            WindowWidthSizeClass.Medium -> {
+                ModalNavigationDrawer(
+                    gesturesEnabled = gesturesEnabled,
+                    drawerState = drawerState,
+                    drawerContent = {
+                        ModalDrawerSheet(drawerState = drawerState, modifier = modifier.width(360.dp)) {
+                            NavigationDrawerSheetContent(
                                 modifier = Modifier,
-                                currentTopDestination = currentTopDestination,
+                                currentRoute = currentRoute,
+                                showQuickSettings = showQuickSettings,
                                 onNavigateToRoute = onNavigateToRoute,
+                                onDismissRequest = onDismissRequest,
+                                onShowHiddenContentAuth = {
+                                    hiddenContentAuthDone = false
+                                    showHiddenContentAuthScreen = true
+                                },
                             )
-                            Spacer(Modifier.weight(1f))
                         }
+                    },
+                    content = content,
+                )
+            }
+            WindowWidthSizeClass.Expanded -> {
+                ModalNavigationDrawer(
+                    gesturesEnabled = drawerState.isOpen,
+                    drawerState = drawerState,
+                    drawerContent = {
+                        ModalDrawerSheet(drawerState = drawerState, modifier = modifier.width(360.dp)) {
+                            NavigationDrawerSheetContent(
+                                modifier = Modifier,
+                                currentRoute = currentRoute,
+                                showQuickSettings = showQuickSettings,
+                                onNavigateToRoute = onNavigateToRoute,
+                                onDismissRequest = onDismissRequest,
+                                onShowHiddenContentAuth = {
+                                    hiddenContentAuthDone = false
+                                    showHiddenContentAuthScreen = true
+                                },
+                            )
+                        }
+                    },
+                ) {
+                    Row {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier.zIndex(1f),
+                        ) {
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxHeight().systemBarsPadding().width(92.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Spacer(Modifier.height(8.dp))
+                                IconButton(
+                                    onClick = { scope.launch { drawerState.open() } },
+                                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                                ) {
+                                    Icon(Icons.Outlined.Menu, null, tint = ThemedIconColors.primary)
+                                }
+                                Spacer(Modifier.weight(1f))
+                                NavigationRailContent(
+                                    modifier = Modifier,
+                                    currentTopDestination = currentTopDestination,
+                                    onNavigateToRoute = onNavigateToRoute,
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                        content()
                     }
-                    content()
                 }
             }
         }
-    }
 
-    // Full-screen LockScreen overlay — rendered outside the narrow ModalDrawerSheet
-    // so it covers the entire display.
-    if (showHiddenContentAuthScreen && !hiddenContentAuthDone) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            LockScreen(
-                onUnlocked = {
-                    hiddenContentAuthDone = true
-                    showHiddenContentAuthScreen = false
-                    // Same sequential pattern used in NavigationDrawerSheetContent:
-                    // close the drawer first (suspend), then navigate. invokeOnCompletion
-                    // was firing even on cancellation (e.g. screen rotation mid-auth).
-                    scope.launch {
-                        onDismissRequest()
-                        onNavigateToRoute(Route.HIDDEN_CONTENT)
-                    }
-                },
-                useBiometric = AuthenticationManager.useBiometric()
-            )
+        // Full-screen LockScreen overlay — rendered outside the narrow ModalDrawerSheet
+        // so it covers the entire display.
+        if (showHiddenContentAuthScreen && !hiddenContentAuthDone) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                LockScreen(
+                    onUnlocked = {
+                        hiddenContentAuthDone = true
+                        showHiddenContentAuthScreen = false
+                        // Same sequential pattern used in NavigationDrawerSheetContent:
+                        // close the drawer first (suspend), then navigate. invokeOnCompletion
+                        // was firing even on cancellation (e.g. screen rotation mid-auth).
+                        scope.launch {
+                            onDismissRequest()
+                            onNavigateToRoute(Route.HIDDEN_CONTENT)
+                        }
+                    },
+                    useBiometric = AuthenticationManager.useBiometric()
+                )
+            }
         }
-    }
     } // end outer Box
 }
 
@@ -206,7 +206,7 @@ fun DrawerHeader(
     modifier: Modifier = Modifier
 ) {
     val isDarkTheme = LocalDarkTheme.current.isDarkTheme()
-    
+
     // Create gradient based on theme
     val headerGradient = if (isDarkTheme) {
         Brush.verticalGradient(
@@ -225,7 +225,7 @@ fun DrawerHeader(
             )
         )
     }
-    
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -240,13 +240,13 @@ fun DrawerHeader(
             // App Logo - left side, vertically centered, reduced for balance
             Image(
                 painter = painterResource(id = R.drawable.splash_logo),
-                contentDescription = "Seal Plus Logo",
+                contentDescription = "Destiny Logo", // ALTERADO AQUI
                 modifier = Modifier.size(76.dp)
             )
-            
+
             // Fixed spacing between logo and text
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             // Text content column - strictly left-aligned text stack
             Column(
                 horizontalAlignment = Alignment.Start,
@@ -254,7 +254,7 @@ fun DrawerHeader(
             ) {
                 // App Name - refined typography with tighter line height
                 Text(
-                    text = "Seal Plus",
+                    text = "Destiny", // ALTERADO AQUI
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 20.sp,
@@ -263,21 +263,21 @@ fun DrawerHeader(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
-                
+
                 // Reduced spacing between title and tagline
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 // Tagline - enhanced hierarchy with improved opacity
                 Text(
-                    text = "Download Manager",
+                    text = "Gerenciador de Downloads", // TRADUZIDO AQUI
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
                     maxLines = 1
                 )
-                
+
                 // Increased spacing before version badge for better hierarchy
                 Spacer(modifier = Modifier.height(10.dp))
-                
+
                 // Version badge with gradient background - premium pill appearance
                 Box(
                     modifier = Modifier
@@ -336,7 +336,7 @@ fun NavigationDrawerSheetContent(
     ) {
         // Modern gradient header
         DrawerHeader()
-        
+
         Spacer(Modifier.height(16.dp))
 
         // Group 1: Primary Destinations
@@ -497,8 +497,8 @@ fun NavigationRailItemVariant(
     ) {
         CompositionLocalProvider(
             LocalContentColor provides
-                if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-                else MaterialTheme.colorScheme.onSurfaceVariant
+                    if (selected) MaterialTheme.colorScheme.onSecondaryContainer
+                    else MaterialTheme.colorScheme.onSurfaceVariant
         ) {
             icon()
         }
@@ -598,8 +598,8 @@ private fun ExpandedPreview() {
 
     CompositionLocalProvider(
         LocalWindowWidthState provides
-            if (widthDp > 480) WindowWidthSizeClass.Expanded
-            else if (widthDp > 360) WindowWidthSizeClass.Medium else WindowWidthSizeClass.Compact
+                if (widthDp > 480) WindowWidthSizeClass.Expanded
+                else if (widthDp > 360) WindowWidthSizeClass.Medium else WindowWidthSizeClass.Compact
     ) {
         Row {
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -610,8 +610,7 @@ private fun ExpandedPreview() {
                 onNavigateToRoute = { currentRoute.value = it },
                 onDismissRequest = {},
             ) {
-                DownloadPageImplV2(taskDownloadStateMap = remember { mutableStateMapOf() }) { _, _
-                    ->
+                DownloadPageImplV2(taskDownloadStateMap = remember { mutableStateMapOf() }) { _, _ ->
                 }
             }
         }

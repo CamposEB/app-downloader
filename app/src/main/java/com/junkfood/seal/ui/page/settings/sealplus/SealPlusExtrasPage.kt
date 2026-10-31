@@ -82,7 +82,7 @@ fun SealPlusExtrasPage(
     var networkPauseDelaySeconds by remember {
         mutableStateOf(NETWORK_PAUSE_DELAY_SECONDS.getInt())
     }
-    
+
     var notificationSound by remember { mutableStateOf(NOTIFICATION_SOUND.getBoolean()) }
     var notificationVibrate by remember { mutableStateOf(NOTIFICATION_VIBRATE.getBoolean()) }
     var notificationLed by remember { mutableStateOf(NOTIFICATION_LED.getBoolean()) }
@@ -91,16 +91,16 @@ fun SealPlusExtrasPage(
     var showSponsorFrequencyDialog by remember { mutableStateOf(false) }
     var notificationErrorSound by remember { mutableStateOf(NOTIFICATION_ERROR_SOUND.getBoolean()) }
     var formatListView by remember { mutableStateOf(FORMAT_LIST_VIEW.getBoolean()) }
-    
-    // Authentication state for AppLock settings
+
+    // Estado de autenticação para as configurações de Bloqueio do App
     var showAuthScreen by remember { mutableStateOf(false) }
     var isAuthenticated by remember { mutableStateOf(false) }
 
-    // Authentication state for Hidden Content navigation
+    // Estado de autenticação para navegação ao Conteúdo Oculto
     var showHiddenContentAuthScreen by remember { mutableStateOf(false) }
     var hiddenContentAuthDone by remember { mutableStateOf(false) }
 
-    // Show authentication screen if AppLock is enabled and user tries to access settings
+    // Exibe a tela de autenticação se o Bloqueio do App estiver ativo e o usuário tentar acessar as configurações
     if (showAuthScreen && !isAuthenticated) {
         LockScreen(
             onUnlocked = {
@@ -113,7 +113,7 @@ fun SealPlusExtrasPage(
         return
     }
 
-    // Show authentication screen before entering Hidden Content page
+    // Exibe a tela de autenticação antes de entrar na página de Conteúdo Oculto
     if (showHiddenContentAuthScreen && !hiddenContentAuthDone) {
         LockScreen(
             onUnlocked = {
@@ -132,8 +132,8 @@ fun SealPlusExtrasPage(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { 
-                    Text(text = stringResource(id = R.string.sealplus_extras)) 
+                title = {
+                    Text(text = stringResource(id = R.string.sealplus_extras))
                 },
                 navigationIcon = { BackButton(onNavigateBack) },
                 scrollBehavior = scrollBehavior
@@ -146,12 +146,12 @@ fun SealPlusExtrasPage(
             item {
                 PreferenceSubtitle(text = stringResource(R.string.download_control))
             }
-            
+
             item {
-                var maxConcurrentDownloads by remember { 
-                    mutableStateOf(MAX_CONCURRENT_DOWNLOADS.getInt()) 
+                var maxConcurrentDownloads by remember {
+                    mutableStateOf(MAX_CONCURRENT_DOWNLOADS.getInt())
                 }
-                
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -185,7 +185,7 @@ fun SealPlusExtrasPage(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    
+
                     androidx.compose.material3.Slider(
                         value = maxConcurrentDownloads.toFloat(),
                         onValueChange = { newValue ->
@@ -198,7 +198,7 @@ fun SealPlusExtrasPage(
                         steps = 4,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -216,7 +216,7 @@ fun SealPlusExtrasPage(
                     }
                 }
             }
-            
+
             item {
                 val aria2cConnectionOptions = listOf(2, 4, 8, 16, 32)
                 var aria2cConnections by remember {
@@ -308,19 +308,19 @@ fun SealPlusExtrasPage(
             item {
                 PreferenceSubtitle(text = stringResource(R.string.security_and_privacy))
             }
-            
+
             item {
                 PreferenceItem(
                     title = stringResource(R.string.app_lock),
                     description = stringResource(R.string.lock_app_with_pin_biometric),
                     icon = Icons.Outlined.Lock,
                     onClick = {
-                        // Check if AppLock is enabled and PIN is set
+                        // Verifica se o Bloqueio do App está ativo e o PIN está configurado
                         if (AuthenticationManager.isSecurityEnabled() && AuthenticationManager.isPinSet()) {
-                            // Show authentication screen before allowing access
+                            // Exibe a tela de autenticação antes de permitir o acesso
                             showAuthScreen = true
                         } else {
-                            // AppLock not enabled, go directly to settings
+                            // Bloqueio do App não ativo, vai direto para as configurações
                             onNavigateToSecurity()
                         }
                     }
@@ -333,18 +333,18 @@ fun SealPlusExtrasPage(
                     description = stringResource(R.string.hidden_content_desc),
                     icon = Icons.Outlined.VisibilityOff,
                     onClick = {
-                        // Hidden Content requires App Lock to be enabled
+                        // O Conteúdo Oculto exige que o Bloqueio do App esteja ativado
                         if (AuthenticationManager.isSecurityEnabled() && AuthenticationManager.isPinSet()) {
                             hiddenContentAuthDone = false
                             showHiddenContentAuthScreen = true
                         } else {
-                            // App Lock not set up — cannot access hidden content
+                            // Bloqueio do App não configurado — não é possível acessar o conteúdo oculto
                             context.makeToast(R.string.hidden_content_requires_app_lock)
                         }
                     }
                 )
             }
-            
+
             item {
                 PreferenceItem(
                     title = stringResource(R.string.network_type_restriction),
@@ -428,24 +428,24 @@ fun SealPlusExtrasPage(
                     }
                 }
             }
-            
+
             item {
                 PreferenceSubtitle(text = stringResource(R.string.notification_settings))
             }
-            
+
             item {
                 PreferenceSwitch(
                     title = stringResource(R.string.notification_sound_settings),
                     description = stringResource(R.string.notification_sound_desc),
                     icon = Icons.Outlined.Notifications,
                     isChecked = notificationSound,
-                    onClick = { 
+                    onClick = {
                         NOTIFICATION_SOUND.updateBoolean(!notificationSound)
                         notificationSound = !notificationSound
                     }
                 )
             }
-            
+
             item {
                 PreferenceSwitch(
                     title = stringResource(R.string.notification_vibrate_settings),
@@ -453,13 +453,13 @@ fun SealPlusExtrasPage(
                     icon = Icons.Outlined.Notifications,
                     isChecked = notificationVibrate,
                     enabled = notificationSound,
-                    onClick = { 
+                    onClick = {
                         NOTIFICATION_VIBRATE.updateBoolean(!notificationVibrate)
                         notificationVibrate = !notificationVibrate
                     }
                 )
             }
-            
+
             item {
                 PreferenceSwitch(
                     title = stringResource(R.string.notification_led_settings),
@@ -467,13 +467,13 @@ fun SealPlusExtrasPage(
                     icon = Icons.Outlined.Notifications,
                     isChecked = notificationLed,
                     enabled = notificationSound,
-                    onClick = { 
+                    onClick = {
                         NOTIFICATION_LED.updateBoolean(!notificationLed)
                         notificationLed = !notificationLed
                     }
                 )
             }
-            
+
             item {
                 PreferenceSwitch(
                     title = stringResource(R.string.notification_success_sound_settings),
@@ -481,13 +481,13 @@ fun SealPlusExtrasPage(
                     icon = Icons.Outlined.Notifications,
                     isChecked = notificationSuccessSound,
                     enabled = notificationSound,
-                    onClick = { 
+                    onClick = {
                         NOTIFICATION_SUCCESS_SOUND.updateBoolean(!notificationSuccessSound)
                         notificationSuccessSound = !notificationSuccessSound
                     }
                 )
             }
-            
+
             item {
                 PreferenceSwitch(
                     title = stringResource(R.string.notification_error_sound_settings),
@@ -495,7 +495,7 @@ fun SealPlusExtrasPage(
                     icon = Icons.Outlined.Notifications,
                     isChecked = notificationErrorSound,
                     enabled = notificationSound,
-                    onClick = { 
+                    onClick = {
                         NOTIFICATION_ERROR_SOUND.updateBoolean(!notificationErrorSound)
                         notificationErrorSound = !notificationErrorSound
                     }
@@ -564,19 +564,19 @@ private fun NetworkTypeDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-                
+
                 PreferenceSingleChoiceItem(
                     text = stringResource(R.string.any_network),
                     selected = selectedType == NETWORK_ANY,
                     onClick = { selectedType = NETWORK_ANY }
                 )
-                
+
                 PreferenceSingleChoiceItem(
                     text = stringResource(R.string.wifi_only),
                     selected = selectedType == NETWORK_WIFI_ONLY,
                     onClick = { selectedType = NETWORK_WIFI_ONLY }
                 )
-                
+
                 PreferenceSingleChoiceItem(
                     text = stringResource(R.string.mobile_only),
                     selected = selectedType == NETWORK_MOBILE_ONLY,
@@ -600,6 +600,7 @@ private fun NetworkTypeDialog(
         }
     )
 }
+
 @Composable
 private fun SponsorFrequencyDialog(
     currentSelection: Int,

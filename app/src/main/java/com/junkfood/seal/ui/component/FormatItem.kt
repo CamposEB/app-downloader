@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -42,6 +43,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ContentCut
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.VerticalSplit
@@ -526,173 +528,128 @@ fun FormatItem(
         }
     }
 
-    if (listView) {
-        // New premium card layout: centered, full-width, 3-section vertical design
-        Box(
-            modifier = modifier
+    // SnapTube Style Row Layout
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(cardShape)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                onClick = { onClick() },
+                onLongClick = onLongClick,
+                onLongClickLabel = stringResource(R.string.copy_link),
+            )
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = animatedOutlineColor,
+                shape = cardShape,
+            ),
+        color = animatedContainerColor,
+    ) {
+        Row(
+            modifier = Modifier
                 .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .clip(cardShape)
-                .combinedClickable(
-                    interactionSource = interactionSource,
-                    onClick = { onClick() },
-                    onLongClick = onLongClick,
-                    onLongClickLabel = stringResource(R.string.copy_link),
-                )
-                .border(
-                    width = if (selected) 2.dp else 1.dp,
-                    color = animatedOutlineColor,
-                    shape = cardShape,
-                )
-                .background(animatedContainerColor)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            // Left: Large icon inside a colored circle
+            Surface(
+                shape = CircleShape,
+                color = if (selected) outlineColor else outlineColor.copy(alpha = 0.15f),
+                modifier = Modifier.size(44.dp),
             ) {
-                // Top Section: Resolution / title — large, bold, perfectly centered
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = animatedTitleColor,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                // Middle Section: Format icon(s) + format text — horizontally centered
-                val middleText = listViewFormatExt.ifBlank { secondLineText }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize(),
                 ) {
-                    mediaIcons()
-                    if (middleText.isNotBlank()) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = middleText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = animatedSecondLineColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                    when {
+                        containsVideo -> Icon(
+                            imageVector = Icons.Rounded.Videocam,
+                            contentDescription = stringResource(R.string.video),
+                            tint = if (selected) MaterialTheme.colorScheme.onPrimary else outlineColor,
+                            modifier = Modifier.size(22.dp),
                         )
-                    }
-                }
-
-                // Bottom Section: file size (left) | bitrate + codec (right)
-                val bottomLeft = listViewFileSizeText.ifBlank { firstLineText }
-                val bottomRight = listViewBitrateCodecText
-                if (bottomLeft.isNotBlank() || bottomRight.isNotBlank()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = bottomLeft,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = animatedSecondLineColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                        containsAudio -> Icon(
+                            imageVector = Icons.Rounded.Audiotrack,
+                            contentDescription = stringResource(R.string.audio),
+                            tint = if (selected) MaterialTheme.colorScheme.onPrimary else outlineColor,
+                            modifier = Modifier.size(22.dp),
                         )
-                        if (bottomRight.isNotBlank()) {
-                            Text(
-                                text = bottomRight,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = animatedSecondLineColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
+                        else -> Icon(
+                            imageVector = Icons.Rounded.QuestionMark,
+                            contentDescription = stringResource(R.string.unknown),
+                            tint = if (selected) MaterialTheme.colorScheme.onPrimary else outlineColor,
+                            modifier = Modifier.size(22.dp),
+                        )
                     }
                 }
             }
-            checkBadge()
-        }
-    } else {
-        // Original grid card layout
-        Box(
-            modifier =
-                modifier
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    }
-                    .clip(cardShape)
-                    .combinedClickable(
-                        interactionSource = interactionSource,
-                        onClick = { onClick() },
-                        onLongClick = onLongClick,
-                        onLongClickLabel = stringResource(R.string.copy_link),
-                    )
-                    .border(
-                        width = if (selected) 2.dp else 1.dp,
-                        color = animatedOutlineColor,
-                        shape = cardShape,
-                    )
-                    .background(animatedContainerColor)
-        ) {
-            Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.Start) {
+
+            // Middle: Title & Details (file size, extension, codec)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    minLines = 2,
-                    maxLines = 2,
+                    fontWeight = FontWeight.Bold,
                     color = animatedTitleColor,
-                    overflow = TextOverflow.Clip,
-                )
-
-                Text(
-                    text = firstLineText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 10.dp),
-                    color = animatedFirstLineColor,
-                    maxLines = 2,
-                )
-
-                Text(
-                    text = secondLineText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 4.dp),
-                    color = animatedSecondLineColor,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-            }
-            Row(
-                modifier = Modifier.padding(bottom = 10.dp, end = 10.dp).align(Alignment.BottomEnd),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                if (containsVideo)
-                    Icon(
-                        imageVector = Icons.Rounded.Videocam,
-                        tint = animatedIconColor,
-                        contentDescription = stringResource(id = R.string.video),
-                        modifier = Modifier.size(18.dp),
-                    )
-                if (containsAudio)
-                    Icon(
-                        imageVector = Icons.Rounded.Audiotrack,
-                        tint = animatedIconColor,
-                        contentDescription = stringResource(id = R.string.audio),
-                        modifier = Modifier.size(18.dp),
-                    )
-                if (!containsVideo && !containsAudio) {
-                    Icon(
-                        imageVector = Icons.Rounded.QuestionMark,
-                        tint = animatedIconColor,
-                        contentDescription = stringResource(id = R.string.unknown),
-                        modifier = Modifier.size(18.dp),
+
+                val fileSizeText = listViewFileSizeText.ifBlank { firstLineText }
+                val extText = listViewFormatExt.ifBlank { secondLineText }
+                val detailsParts = listOfNotNull(
+                    fileSizeText.takeIf { it.isNotBlank() },
+                    extText.takeIf { it.isNotBlank() }
+                )
+                val detailsText = detailsParts.joinToString(" \u2022 ")
+
+                if (detailsText.isNotBlank()) {
+                    Text(
+                        text = detailsText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = animatedSecondLineColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-            checkBadge()
+
+            // Right: Selection Checkmark Badge / Download Action Icon
+            Surface(
+                shape = CircleShape,
+                color = if (selected) outlineColor else MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier.size(32.dp),
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    if (selected) {
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = null,
+                            tint = selectedTextColor,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.FileDownload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
         }
     }
 }

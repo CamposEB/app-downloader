@@ -58,37 +58,37 @@ fun OnboardingScreen(
     onFinish: () -> Unit
 ) {
     val isDarkTheme = LocalDarkTheme.current.isDarkTheme()
-    
+
     val pages = listOf(
         OnboardingPage(
             icon = Icons.Filled.VideoLibrary,
-            title = "Welcome to Seal Plus",
-            description = "Your ultimate video downloader powered by yt-dlp. Download videos, audio, and playlists from your favorite platforms with ease.",
+            title = "Bem-vindo ao Destiny",
+            description = "Seu baixador de vídeos definitivo. Baixe vídeos, áudios e playlists das suas plataformas favoritas com facilidade.",
             gradient = GradientBrushes.Primary
         ),
         OnboardingPage(
             icon = Icons.Filled.Download,
-            title = "Powerful Downloads",
-            description = "Download in multiple formats and quality options. Choose from video, audio-only, or custom formats with advanced configuration.",
+            title = "Downloads Poderosos",
+            description = "Baixe em vários formatos e opções de qualidade. Escolha entre vídeo, somente áudio ou formatos personalizados.",
             gradient = GradientBrushes.Secondary
         ),
         OnboardingPage(
             icon = Icons.Filled.Settings,
-            title = "Highly Customizable",
-            description = "Extensive settings to personalize your experience. Control download directory, network preferences, themes, and much more.",
+            title = "Altamente Personalizável",
+            description = "Configurações extensas para personalizar sua experiência. Controle a pasta de download, preferências de rede, temas e muito mais.",
             gradient = GradientBrushes.Accent
         ),
         OnboardingPage(
             icon = Icons.Filled.Security,
-            title = "Privacy & Security",
-            description = "Your downloads are private and secure. Optional app lock with PIN or biometric authentication keeps your content safe.",
+            title = "Privacidade e Segurança",
+            description = "Seus downloads são privados e seguros. Bloqueio opcional com PIN ou biometria mantém seu conteúdo seguro.",
             gradient = GradientBrushes.Vibrant
         )
     )
-    
+
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -102,7 +102,7 @@ fun OnboardingScreen(
             currentPage = pagerState.currentPage,
             isDarkTheme = isDarkTheme
         )
-        
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -124,18 +124,18 @@ fun OnboardingScreen(
                         }
                     ) {
                         Text(
-                            text = "Skip",
-                            color = if (isDarkTheme) 
+                            text = "Pular",
+                            color = if (isDarkTheme)
                                 GradientDarkColors.OnSurface.copy(alpha = 0.7f)
-                            else 
+                            else
                                 MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(40.dp))
-            
+
             // ViewPager for onboarding pages
             HorizontalPager(
                 state = pagerState,
@@ -146,18 +146,18 @@ fun OnboardingScreen(
                     isDarkTheme = isDarkTheme
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             // Page indicators
             PageIndicators(
                 pageCount = pages.size,
                 currentPage = pagerState.currentPage,
                 isDarkTheme = isDarkTheme
             )
-            
+
             Spacer(modifier = Modifier.height(40.dp))
-            
+
             // Navigation buttons
             AnimatedVisibility(
                 visible = true,
@@ -187,12 +187,12 @@ fun OnboardingScreen(
                                     MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Back", fontSize = 16.sp)
+                            Text("Voltar", fontSize = 16.sp)
                         }
                     } else {
                         Spacer(modifier = Modifier.width(1.dp))
                     }
-                    
+
                     // Next/Get Started button
                     Button(
                         onClick = {
@@ -221,7 +221,7 @@ fun OnboardingScreen(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = if (pagerState.currentPage < pages.size - 1) "Next" else "Get Started",
+                                text = if (pagerState.currentPage < pages.size - 1) "Próximo" else "Começar",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -236,7 +236,7 @@ fun OnboardingScreen(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -252,13 +252,13 @@ fun OnboardingPageContent(
 ) {
     // Animation states
     var visible by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(page) {
         visible = false
         delay(100)
         visible = true
     }
-    
+
     val iconScale by animateFloatAsState(
         targetValue = if (visible) 1f else 0.5f,
         animationSpec = spring(
@@ -267,13 +267,13 @@ fun OnboardingPageContent(
         ),
         label = "iconScale"
     )
-    
+
     val contentAlpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
         animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
         label = "contentAlpha"
     )
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -299,7 +299,7 @@ fun OnboardingPageContent(
                         shape = CircleShape
                     )
             )
-            
+
             // Icon container
             Box(
                 modifier = Modifier
@@ -324,9 +324,9 @@ fun OnboardingPageContent(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(48.dp))
-        
+
         // Title
         Text(
             text = page.title,
@@ -339,9 +339,9 @@ fun OnboardingPageContent(
                 MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 32.dp)
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Description
         Text(
             text = page.description,
@@ -372,7 +372,7 @@ fun PageIndicators(
     ) {
         repeat(pageCount) { page ->
             val isSelected = page == currentPage
-            
+
             val width by animateDpAsState(
                 targetValue = if (isSelected) 32.dp else 8.dp,
                 animationSpec = spring(
@@ -381,13 +381,13 @@ fun PageIndicators(
                 ),
                 label = "indicatorWidth"
             )
-            
+
             val alpha by animateFloatAsState(
                 targetValue = if (isSelected) 1f else 0.3f,
                 animationSpec = tween(durationMillis = 300),
                 label = "indicatorAlpha"
             )
-            
+
             Box(
                 modifier = Modifier
                     .width(width)
@@ -414,9 +414,9 @@ fun AnimatedBackgroundGradient(
     isDarkTheme: Boolean
 ) {
     if (!isDarkTheme) return
-    
+
     val infiniteTransition = rememberInfiniteTransition(label = "backgroundGradient")
-    
+
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
@@ -426,7 +426,7 @@ fun AnimatedBackgroundGradient(
         ),
         label = "rotation"
     )
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -448,7 +448,7 @@ fun AnimatedBackgroundGradient(
                     shape = CircleShape
                 )
         )
-        
+
         // Gradient blob bottom left
         Box(
             modifier = Modifier
@@ -466,7 +466,7 @@ fun AnimatedBackgroundGradient(
                     shape = CircleShape
                 )
         )
-        
+
         // Center gradient blob (moves with pages)
         Box(
             modifier = Modifier

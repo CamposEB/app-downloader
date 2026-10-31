@@ -1,10 +1,10 @@
 package com.junkfood.seal.ui.integration
 
 /**
- * INTEGRATION EXAMPLES FOR EXISTING SEAL APP PAGES
- * 
+ * INTEGRATION EXAMPLES FOR EXISTING DESTINY APP PAGES
+ *
  * This file provides specific examples of how to integrate Gradient Dark theme
- * into the existing Seal app pages. Copy and adapt these examples to update
+ * into the existing Destiny app pages. Copy and adapt these examples to update
  * your existing screens.
  */
 
@@ -21,14 +21,14 @@ import com.junkfood.seal.ui.theme.GradientBrushes
 
 /**
  * EXAMPLE 1: Settings Page Integration
- * 
+ *
  * Update SettingsPage.kt to use premium components
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PremiumSettingsPageExample() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    
+
     Scaffold(
         topBar = {
             LargeTopAppBar(
@@ -51,7 +51,7 @@ fun PremiumSettingsPageExample() {
                     )
                 }
             }
-            
+
             item {
                 AnimatedCardContainer(delayMillis = 50) {
                     PremiumGlassCard(
@@ -62,7 +62,7 @@ fun PremiumSettingsPageExample() {
                     )
                 }
             }
-            
+
             item {
                 AnimatedCardContainer(delayMillis = 100) {
                     PremiumGlassCard(
@@ -73,7 +73,7 @@ fun PremiumSettingsPageExample() {
                     )
                 }
             }
-            
+
             // Appearance Section
             item {
                 AnimatedCardContainer(delayMillis = 150) {
@@ -83,7 +83,7 @@ fun PremiumSettingsPageExample() {
                     )
                 }
             }
-            
+
             item {
                 AnimatedCardContainer(delayMillis = 200) {
                     PremiumGlassCard(
@@ -94,7 +94,7 @@ fun PremiumSettingsPageExample() {
                     )
                 }
             }
-            
+
             // Network Section
             item {
                 AnimatedCardContainer(delayMillis = 250) {
@@ -104,7 +104,7 @@ fun PremiumSettingsPageExample() {
                     )
                 }
             }
-            
+
             item {
                 AnimatedCardContainer(delayMillis = 300) {
                     PremiumGlassCard(
@@ -121,14 +121,14 @@ fun PremiumSettingsPageExample() {
 
 /**
  * EXAMPLE 2: Download History Integration
- * 
+ *
  * Update download history screen with premium cards
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PremiumDownloadHistoryExample() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    
+
     Scaffold(
         topBar = {
             LargeTopAppBar(
@@ -160,7 +160,7 @@ fun PremiumDownloadHistoryExample() {
                     }
                 }
             }
-            
+
             // Recent Downloads Header
             item {
                 AnimatedCardContainer(delayMillis = 50) {
@@ -170,7 +170,7 @@ fun PremiumDownloadHistoryExample() {
                     )
                 }
             }
-            
+
             // Download Items (loop with staggered animation)
             items(10) { index ->
                 AnimatedCardContainer(delayMillis = 100 + (index * 30)) {
@@ -203,7 +203,7 @@ fun PremiumFormatSelectionExample(
             title = "Select Quality",
             icon = Icons.Outlined.HighQuality
         )
-        
+
         // Quality Options
         PremiumGlassCard(
             title = "1080p Full HD",
@@ -211,21 +211,21 @@ fun PremiumFormatSelectionExample(
             icon = Icons.Outlined.HighQuality,
             onClick = { /* Select 1080p */ }
         )
-        
+
         PremiumGlassCard(
             title = "720p HD",
             description = "Good quality • ~120 MB",
             icon = Icons.Outlined.Hd,
             onClick = { /* Select 720p */ }
         )
-        
+
         PremiumGlassCard(
             title = "480p",
             description = "Standard quality • ~60 MB",
             icon = Icons.Outlined.Sd,
             onClick = { /* Select 480p */ }
         )
-        
+
         // Action Buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -249,11 +249,11 @@ fun PremiumFormatSelectionExample(
 @Composable
 fun PremiumHomeScreenExample() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    
+
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = { Text("Seal Plus") },
+                title = { Text("Destiny") }, // ALTERADO AQUI
                 scrollBehavior = scrollBehavior
             )
         }
@@ -272,7 +272,7 @@ fun PremiumHomeScreenExample() {
                     )
                 }
             }
-            
+
             // URL Input Card
             item {
                 AnimatedCardContainer(delayMillis = 100) {
@@ -290,7 +290,7 @@ fun PremiumHomeScreenExample() {
                                     Icon(Icons.Outlined.Link, null)
                                 }
                             )
-                            
+
                             PremiumGradientButton(
                                 text = "Start Download",
                                 icon = Icons.Outlined.Download,
@@ -302,7 +302,7 @@ fun PremiumHomeScreenExample() {
                     }
                 }
             }
-            
+
             // Quick Actions
             item {
                 AnimatedCardContainer(delayMillis = 200) {
@@ -312,7 +312,7 @@ fun PremiumHomeScreenExample() {
                     )
                 }
             }
-            
+
             item {
                 AnimatedCardContainer(delayMillis = 250) {
                     Row(
@@ -325,7 +325,7 @@ fun PremiumHomeScreenExample() {
                             onClick = { /* Open playlists */ },
                             modifier = Modifier.weight(1f)
                         )
-                        
+
                         PremiumGlassCard(
                             title = "History",
                             icon = Icons.Outlined.History,
@@ -346,7 +346,7 @@ fun PremiumHomeScreenExample() {
 @Composable
 fun PremiumAboutPageExample() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    
+
     Scaffold(
         topBar = {
             LargeTopAppBar(
@@ -372,15 +372,15 @@ fun PremiumAboutPageExample() {
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "Seal Plus",
+                                text = "Destiny", // ALTERADO AQUI
                                 style = MaterialTheme.typography.headlineMedium
                             )
                             Text(
-                                text = "Version 1.0.0",
+                                text = "Version 1.0.7", // ALTERADO AQUI
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = "A premium video downloader with gradient dark theme",
+                                text = "O seu baixador de vídeos premium", // ALTERADO AQUI
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -388,7 +388,7 @@ fun PremiumAboutPageExample() {
                     }
                 }
             }
-            
+
             // Developer Section
             item {
                 AnimatedCardContainer(delayMillis = 100) {
@@ -398,7 +398,7 @@ fun PremiumAboutPageExample() {
                     )
                 }
             }
-            
+
             item {
                 AnimatedCardContainer(delayMillis = 150) {
                     PremiumGlassCard(
@@ -409,7 +409,7 @@ fun PremiumAboutPageExample() {
                     )
                 }
             }
-            
+
             item {
                 AnimatedCardContainer(delayMillis = 200) {
                     PremiumGlassCard(
@@ -420,7 +420,7 @@ fun PremiumAboutPageExample() {
                     )
                 }
             }
-            
+
             // Legal Section
             item {
                 AnimatedCardContainer(delayMillis = 250) {
@@ -430,7 +430,7 @@ fun PremiumAboutPageExample() {
                     )
                 }
             }
-            
+
             item {
                 AnimatedCardContainer(delayMillis = 300) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -440,7 +440,7 @@ fun PremiumAboutPageExample() {
                             icon = Icons.Outlined.Description,
                             onClick = { /* View license */ }
                         )
-                        
+
                         PremiumGlassCard(
                             title = "Privacy Policy",
                             description = "Your data stays on your device",
@@ -478,33 +478,33 @@ private fun StatRow(label: String, value: String) {
 
 /**
  * INTEGRATION CHECKLIST:
- * 
+ *
  * For each existing screen in your app:
- * 
+ *
  * 1. Import premium components:
  *    import com.junkfood.seal.ui.component.*
  *    import com.junkfood.seal.ui.theme.GradientBrushes
- * 
+ *
  * 2. Add AnimatedCardContainer wrapper to LazyColumn items:
  *    - Start with delayMillis = 0 for first item
  *    - Increment by 50-100ms for each subsequent item
- * 
+ *
  * 3. Replace Card with PremiumGlassCard:
  *    - Add title, description, and icon parameters
  *    - Move click handler to onClick parameter
- * 
+ *
  * 4. Replace Button with PremiumGradientButton:
  *    - Specify text and icon
  *    - Choose appropriate gradient brush
- * 
+ *
  * 5. Add PremiumSectionHeader for section titles:
  *    - Replaces or enhances existing Text headers
  *    - Adds visual hierarchy
- * 
+ *
  * 6. Use PremiumInfoCard for hints and messages:
  *    - Replaces plain text or card-based info displays
  *    - Adds gradient border for emphasis
- * 
+ *
  * 7. Test with Gradient Dark both enabled and disabled:
  *    - Components should gracefully fall back to Material 3 styling
  *    - Animations should remain smooth
